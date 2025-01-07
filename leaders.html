@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bills Playoff Bingo Leaderboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Bills Playoff Bingo Leaderboard</h1>
+
+        <!-- Winners Section -->
+        <div class="leaderboard-section winners-section">
+            <h2>Winners</h2>
+            <div id="winnersContainer" class="board-list">
+                <!-- Will be populated with winners or show "No Winners" message -->
+            </div>
+        </div>
+
+        <!-- Participants Section -->
+        <div class="leaderboard-section participants-section">
+            <h2>Participants</h2>
+            <div id="participantsContainer" class="board-list">
+                <!-- Will be populated with sorted participants -->
+            </div>
+        </div>
+
+        <!-- Modal for displaying full board -->
+        <div id="boardModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div class="modal-board-container">
+                    <h3 id="modalUsername">User's Board</h3>
+                    <div class="stats-summary">
+                        <p>Completed Lines: <span id="modalCompletedLines">0</span></p>
+                        <p>Max True in Line: <span id="modalMaxTrue">0</span></p>
+                        <p>Lines with Max: <span id="modalLinesWithMax">0</span></p>
+                        <p>Total True: <span id="modalTotalTrue">0</span></p>
+                    </div>
+                    <div id="modalBoard" class="bingo-board">
+                        <!-- Board will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/leaderboard.js"></script>
+</body>
+</html>
