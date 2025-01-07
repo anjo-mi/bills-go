@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Bills Playoff Bingo Boards</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Bingo Boards</h1>
+
+        <!-- Stats Display -->
+        <div class="stats-container">
+            <h2>Current Board Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>Completed Lines</h3>
+                    <p id="completedLines">0</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Highest True Count</h3>
+                    <p id="maxTrueCount">0</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Lines with Max True</h3>
+                    <p id="linesWithMax">0</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Total True Conditions</h3>
+                    <p id="totalTrue">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boards Carousel -->
+        <div class="boards-carousel">
+            <button id="prevBoard" class="carousel-btn">&lt;</button>
+            
+            <div class="board-display">
+                <div id="displayBoard" class="bingo-board">
+                    <!-- Board cells will be populated by JavaScript -->
+                </div>
+                <p class="board-info">Board <span id="currentBoardNum">1</span> of <span id="totalBoards">1</span></p>
+            </div>
+
+            <button id="nextBoard" class="carousel-btn">&gt;</button>
+        </div>
+
+        <!-- Create New Board Button - only shown if before deadline -->
+        <div id="newBoardContainer" class="new-board-container">
+            <button id="createNewBoard" class="create-btn">Create New Board</button>
+            <p class="deadline-info">You can create new boards until 1PM EST on Sunday</p>
+        </div>
+    </div>
+
+    <script src="/js/displayBoards.js"></script>
+</body>
+</html>

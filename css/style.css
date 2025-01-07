@@ -1,3 +1,15 @@
+
+/* table of contents
+    index.html
+    /js/main.js
+    userBoards.html
+    /js/displayBoards.js
+*/
+
+
+
+/* index.html and /js/main.js */
+
 /* Base settings */
 html {
     font-size: 62.5%;
@@ -49,9 +61,9 @@ h2 {
 }
 
 .condition-item {
-    flex: 0 1 auto;  /* Don't grow, can shrink, auto-base size */
-    min-width: 15rem;  /* Minimum width for readability */
-    max-width: calc(33.333% - 1rem);  /* Maximum width of 1/3 container minus gap */
+    flex: 0 1 auto;
+    min-width: 15rem;
+    max-width: calc(33.333% - 1rem);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -62,12 +74,14 @@ h2 {
     background-color: #f0f0f0;
     font-size: 1.4rem;
     transition: all 0.3s ease;
+    touch-action: none;
+    user-select: none;
 }
 
-.condition-item {
-    /* Add to existing condition-item styles */
-    touch-action: none; /* Prevents default touch actions */
-    user-select: none; /* Prevents text selection while dragging */
+.condition-item:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-0.2rem);
+    box-shadow: 0 0.2rem 0.5rem rgba(0,0,0,0.1);
 }
 
 .condition-item.disabled {
@@ -81,21 +95,6 @@ h2 {
     background-color: #e8e8e8;
 }
 
-.board-cell.drag-over {
-    background-color: #f0f0f0;
-    border: 0.2rem dashed #000;
-}
-
-.condition-item:hover {
-    background-color: #e0e0e0;
-    transform: translateY(-0.2rem);
-    box-shadow: 0 0.2rem 0.5rem rgba(0,0,0,0.1);
-}
-
-.condition-item.hidden {
-    display: none;
-}
-
 .condition-text {
     flex: 1;
     margin-right: 1rem;
@@ -107,7 +106,7 @@ h2 {
     white-space: nowrap;
 }
 
-/* Board styling */
+/* Board styling (shared between create and display) */
 .bingo-board {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -158,8 +157,83 @@ h2 {
     background-color: #f0f0f0;
 }
 
-/* Button styling */
-.submit-btn {
+/* Stats container (for display page) */
+.stats-container {
+    margin: 2rem 0;
+    padding: 2rem;
+    border-radius: 0.8rem;
+    background-color: #f8f8f8;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 0.6rem;
+    background-color: white;
+    box-shadow: 0 0.2rem 0.4rem rgba(0,0,0,0.1);
+}
+
+.stat-item h3 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.stat-item p {
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+/* Boards carousel */
+.boards-carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin: 3rem 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.board-display {
+    text-align: center;
+}
+
+.carousel-btn {
+    font-size: 2.4rem;
+    padding: 1rem 1.5rem;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    min-width: 4.4rem;
+    height: 4.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.carousel-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Button styling (shared) */
+.submit-btn, .create-btn {
     display: block;
     margin: 2rem auto;
     padding: 1rem 2rem;
@@ -177,11 +251,33 @@ h2 {
     cursor: not-allowed;
 }
 
-.submit-btn:hover:not(:disabled) {
+.submit-btn:hover:not(:disabled),
+.create-btn:hover {
     background-color: #45a049;
 }
 
-/* Media Queries for smaller screens */
+.board-info {
+    margin-top: 1.5rem;
+    font-size: 1.6rem;
+}
+
+/* New board container */
+.new-board-container {
+    text-align: center;
+    margin: 3rem 0;
+}
+
+.deadline-info {
+    margin-top: 1rem;
+    font-size: 1.4rem;
+    color: #666;
+}
+
+.new-board-container.hidden {
+    display: none;
+}
+
+/* Media Queries */
 @media screen and (max-width: 48em) { /* 768px */
     .container {
         width: 95%;
@@ -201,8 +297,6 @@ h2 {
     }
 
     .condition-item {
-        min-width: 12rem;
-        max-width: calc(50% - 1rem);  /* 2 items per row on medium screens */
         font-size: 1.2rem;
         padding: 0.8rem;
     }
@@ -211,20 +305,47 @@ h2 {
         padding: 0.5rem;
         font-size: 1.2rem;
     }
+
+    .carousel-btn {
+        font-size: 2rem;
+        padding: 0.8rem 1.2rem;
+    }
+
+    .stats-grid {
+        gap: 1rem;
+    }
+
+    .stat-item {
+        padding: 1rem;
+    }
+
+    .stat-item h3 {
+        font-size: 1.4rem;
+    }
+
+    .stat-item p {
+        font-size: 2rem;
+    }
+
+    /* Remove hover effects on touch devices */
+    .condition-item:hover {
+        transform: none;
+    }
 }
 
-/* For very small screens */
 @media screen and (max-width: 30em) { /* 480px */
     h1 {
         font-size: 2rem;
     }
 
     .condition-item {
-        min-width: 100%;  /* Full width on very small screens */
+        min-width: 100%;
         max-width: 100%;
     }
 
-    .conditions-list {
-        gap: 0.5rem;
+    .carousel-btn {
+        font-size: 1.6rem;
+        min-width: 3.6rem;
+        height: 3.6rem;
     }
 }
