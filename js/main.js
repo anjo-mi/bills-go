@@ -13,7 +13,7 @@ class Board {
         this.grid = Array(5).fill(null).map(() => Array(5).fill(null));        
         // Set center square with automatic true condition
         const centerCondition = new Condition("Free Space");
-        centerCondition.updateStatus(true);
+        centerCondition.status = true;  // Direct assignment instead of updateStatus
         this.grid[2][2] = centerCondition;
     }
 
@@ -26,16 +26,15 @@ class Board {
             throw new Error("Position already occupied");
         }
 
-        const currentInstances = this.conditionInstances.get(condition.description) || 0;
-        if (!condition.allowMultiple && currentInstances > 0) {
+        if (!condition.allowMultiple && condition.available <= 0) {
             throw new Error("Condition cannot be used multiple times");
         }
-        if (condition.allowMultiple && currentInstances >= condition.maxInstances) {
+        if (condition.allowMultiple && condition.available <= 0) {
             throw new Error(`Cannot use condition more than ${condition.maxInstances} times`);
         }
 
         this.grid[row][col] = condition;
-        this.conditionInstances.set(condition.description, currentInstances + 1);
+        condition.available--;
     }
 
     isComplete() {
@@ -146,22 +145,72 @@ class GameManager {
         this.board = Array(5).fill(null).map(() => Array(5).fill(null));
         this.draggedItem = null;
         this.draggedItemOrigin = null;
+        this.touchStartX = 0;
+        this.touchStartY = 0;
         this.setupGame();
     }
 
     setupGame() {
-        // Initialize your conditions here
-        this.addCondition(new Condition("Example 1", false, 1));
-        this.addCondition(new Condition("Example 2", true, 2));
-        // Add more conditions as needed
+        // First handle any hard-coded conditions in HTML
+        const existingConditions = document.querySelectorAll('.condition-item');
+        existingConditions.forEach(item => {
+            const text = item.querySelector('.condition-text').textContent;
+            // Handle the "Available: X" format
+            const availableText = item.querySelector('.instance-counter').textContent;
+            const maxInstances = parseInt(availableText.split(': ')[1]) || 1;
+            
+            // Create condition object for this HTML element
+            const condition = new Condition(text, maxInstances > 1, maxInstances);
+            this.conditions.set(text, condition);
+            
+            // The data-condition-id isn't needed, we'll use the text as the identifier
+            item.dataset.condition = text;
+            this.setupDragListeners(item);
+            this.setupTouchListeners(item);
+        });
 
         // Set up center square
         const centerCondition = new Condition("FREE SPACE");
         centerCondition.status = true;
         this.board[2][2] = centerCondition;
 
-        this.initializeDOM();
-        this.setupEventListeners();
+        // Set up board cell events
+        this.initializeBoardCells();
+
+        // Set up form submission
+        this.setupFormSubmission();
+    }
+
+    setupFormSubmission() {
+        const form = document.getElementById('bingoForm');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Only proceed if the board is complete
+            if (!this.isBoardComplete()) {
+                alert('Please fill all squares before submitting');
+                return;
+            }
+
+            // Prepare board data for submission
+            const boardData = {
+                grid: this.board.map(row => 
+                    row.map(cell => cell ? {
+                        description: cell.description,
+                        status: cell.status,
+                        allowMultiple: cell.allowMultiple,
+                        maxInstances: cell.maxInstances
+                    } : null)
+                )
+            };
+
+            // Update hidden input
+            const boardDataInput = document.getElementById('boardData');
+            boardDataInput.value = JSON.stringify(boardData);
+
+            // Submit the form
+            form.submit();
+        });
     }
 
     addCondition(condition) {
@@ -171,7 +220,7 @@ class GameManager {
 
     createConditionElement(condition) {
         const conditionsPool = document.getElementById('conditionsPool');
-        const conditionsList = conditionsPool.querySelector('.conditions-list');
+        const conditionsList = conditionsPool.querySelector('.conditions-list') || conditionsPool;
 
         const li = document.createElement('li');
         li.className = 'condition-item';
@@ -180,58 +229,54 @@ class GameManager {
 
         li.innerHTML = `
             <span class="condition-text">${condition.description}</span>
-            <span class="instance-counter">Available: ${condition.available}</span>
+            <span class="instance-counter">${condition.available}/${condition.maxInstances}</span>
         `;
 
         this.setupDragListeners(li);
+        this.setupTouchListeners(li);
         conditionsList.appendChild(li);
     }
 
-    setupEventListeners() {
+    initializeBoardCells() {
         const cells = document.querySelectorAll('.board-cell');
         cells.forEach(cell => {
-            cell.addEventListener('dragover', e => this.handleDragOver(e));
-            cell.addEventListener('drop', e => this.handleDrop(e));
+            // Clear existing listeners
+            const newCell = cell.cloneNode(true);
+            cell.parentNode.replaceChild(newCell, cell);
+            
+            // Add new listeners
+            newCell.addEventListener('dragover', e => this.handleDragOver(e));
+            newCell.addEventListener('dragleave', e => this.handleDragLeave(e));
+            newCell.addEventListener('drop', e => this.handleDrop(e));
+            newCell.addEventListener('touchend', e => this.handleTouchEnd(e));
         });
-    }
-
-    setupDragListeners(element) {
-        element.addEventListener('dragstart', e => this.handleDragStart(e));
-        element.addEventListener('dragend', e => this.handleDragEnd(e));
-    }
-
-    handleDragStart(e) {
-        this.draggedItem = e.target;
-        this.draggedItemOrigin = this.getItemLocation(e.target);
-        e.target.classList.add('dragging');
-        
-        // Store the condition's location data
-        const data = {
-            condition: e.target.dataset.condition,
-            origin: this.draggedItemOrigin
-        };
-        e.dataTransfer.setData('text/plain', JSON.stringify(data));
-    }
-
-    handleDragEnd(e) {
-        e.target.classList.remove('dragging');
-    }
-
-    handleDragOver(e) {
-        e.preventDefault();
-        e.target.classList.add('drag-over');
     }
 
     handleDrop(e) {
         e.preventDefault();
         const cell = e.target.closest('.board-cell');
+        if (!cell) return;
+        
         cell.classList.remove('drag-over');
 
-        if (!cell) return;
+        let data;
+        try {
+            data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        } catch {
+            // If data transfer fails, use draggedItem properties
+            if (this.draggedItem) {
+                data = {
+                    condition: this.draggedItem.dataset.condition,
+                    origin: this.draggedItemOrigin
+                };
+            } else {
+                return;
+            }
+        }
 
-        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
         const condition = this.conditions.get(data.condition);
-        const origin = data.origin;
+        if (!condition) return;
+
         const [row, col] = [
             parseInt(cell.dataset.row),
             parseInt(cell.dataset.col)
@@ -241,7 +286,7 @@ class GameManager {
         if (row === 2 && col === 2) return;
 
         // If dragging from the pool to an empty cell
-        if (origin === 'pool' && !this.board[row][col]) {
+        if (data.origin === 'pool' && !this.board[row][col]) {
             if (condition.available > 0) {
                 this.placeConditionOnBoard(condition, row, col);
                 condition.available--;
@@ -249,8 +294,8 @@ class GameManager {
             }
         }
         // If dragging from one cell to another
-        else if (origin !== 'pool') {
-            const [fromRow, fromCol] = origin.split(',').map(Number);
+        else if (data.origin !== 'pool') {
+            const [fromRow, fromCol] = data.origin.split(',').map(Number);
             // Swap positions if both cells have conditions
             if (this.board[row][col]) {
                 const temp = this.board[row][col];
@@ -271,15 +316,123 @@ class GameManager {
         this.checkBoardCompletion();
     }
 
-    getItemLocation(element) {
-        if (element.closest('.conditions-pool')) {
-            return 'pool';
+    setupDragListeners(element) {
+        element.draggable = true;
+        element.addEventListener('dragstart', e => this.handleDragStart(e));
+        element.addEventListener('dragend', e => this.handleDragEnd(e));
+    }
+    
+    setupTouchListeners(element) {
+        element.addEventListener('touchstart', e => this.handleTouchStart(e), { passive: false });
+        element.addEventListener('touchmove', e => this.handleTouchMove(e), { passive: false });
+        element.addEventListener('touchend', e => this.handleTouchEnd(e));
+    }
+    
+    handleDragStart(e) {
+        this.draggedItem = e.target;
+        this.draggedItemOrigin = this.getItemLocation(e.target);
+        e.target.classList.add('dragging');
+        
+        const data = {
+            condition: e.target.dataset.condition,
+            origin: this.draggedItemOrigin
+        };
+        e.dataTransfer.setData('text/plain', JSON.stringify(data));
+    }
+    
+    handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+        document.querySelectorAll('.board-cell').forEach(cell => 
+            cell.classList.remove('drag-over'));
+    }
+    
+    handleDragOver(e) {
+        e.preventDefault();
+        e.target.classList.add('drag-over');
+    }
+    
+    handleDragLeave(e) {
+        e.target.classList.remove('drag-over');
+    }
+    
+    handleTouchStart(e) {
+        if (!e.target.closest('.condition-item')) return;
+        e.preventDefault();
+        
+        const item = e.target.closest('.condition-item');
+        this.draggedItem = item;
+        this.draggedItemOrigin = this.getItemLocation(item);
+        
+        const touch = e.touches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+        
+        item.classList.add('dragging');
+        
+        // Create visual feedback for dragging
+        const clone = item.cloneNode(true);
+        clone.id = 'dragHelper';
+        clone.style.position = 'fixed';
+        clone.style.top = `${touch.clientY - 25}px`;
+        clone.style.left = `${touch.clientX - 25}px`;
+        clone.style.opacity = '0.8';
+        clone.style.pointerEvents = 'none';
+        clone.style.zIndex = '1000';
+        document.body.appendChild(clone);
+    }
+    
+    handleTouchMove(e) {
+        if (!this.draggedItem) return;
+        e.preventDefault();
+    
+        const touch = e.touches[0];
+        const helper = document.getElementById('dragHelper');
+        if (helper) {
+            helper.style.top = `${touch.clientY - 25}px`;
+            helper.style.left = `${touch.clientX - 25}px`;
         }
-        const cell = element.closest('.board-cell');
-        if (cell) {
-            return `${cell.dataset.row},${cell.dataset.col}`;
+    
+        // Find the cell under the touch point
+        const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (cell && cell.classList.contains('board-cell')) {
+            // Remove drag-over from all cells
+            document.querySelectorAll('.board-cell').forEach(c => 
+                c.classList.remove('drag-over'));
+            // Add drag-over to current cell
+            cell.classList.add('drag-over');
         }
-        return null;
+    }
+    
+    handleTouchEnd(e) {
+        if (!this.draggedItem) return;
+        e.preventDefault();
+    
+        const helper = document.getElementById('dragHelper');
+        if (helper) helper.remove();
+    
+        const touch = e.changedTouches[0];
+        const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+        if (cell && cell.classList.contains('board-cell')) {
+            this.handleDrop({ 
+                preventDefault: () => {},
+                target: cell,
+                dataTransfer: {
+                    getData: () => JSON.stringify({
+                        condition: this.draggedItem.dataset.condition,
+                        origin: this.draggedItemOrigin
+                    })
+                }
+            });
+        }
+    
+        this.draggedItem.classList.remove('dragging');
+        this.draggedItem = null;
+        this.draggedItemOrigin = null;
+    
+        // Remove drag-over from all cells
+        document.querySelectorAll('.board-cell').forEach(cell => 
+            cell.classList.remove('drag-over'));
     }
 
     placeConditionOnBoard(condition, row, col) {
@@ -313,7 +466,6 @@ class GameManager {
             const counter = element.querySelector('.instance-counter');
             counter.textContent = `Available: ${condition.available}`;
             
-            // Disable if no instances available
             if (condition.available <= 0) {
                 element.classList.add('disabled');
                 element.draggable = false;
@@ -324,6 +476,21 @@ class GameManager {
         });
     }
 
+    getItemLocation(element) {
+        if (element.closest('.conditions-pool')) {
+            return 'pool';
+        }
+        const cell = element.closest('.board-cell');
+        if (cell) {
+            return `${cell.dataset.row},${cell.dataset.col}`;
+        }
+        return null;
+    }
+
+    isBoardComplete() {
+        return this.board.every(row => row.every(cell => cell !== null));
+    }
+
     checkBoardCompletion() {
         const submitButton = document.getElementById('submitButton');
         const isComplete = this.board.every(row => 
@@ -331,13 +498,12 @@ class GameManager {
         );
         submitButton.disabled = !isComplete;
     }
-
-    // Add method to handle form submission
-    handleSubmit(event) {
-        event.preventDefault();
-        const boardData = document.getElementById('boardData');
-        boardData.value = JSON.stringify(this.board);
-        // Now the form can be submitted
-        event.target.submit();
-    }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const game = new GameManager();
+    
+    // Set up form submission
+    // const form = document.getElementById('bingoForm');
+    // form.addEventListener('submit', (e) => game.handleSubmit(e));
+});

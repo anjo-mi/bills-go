@@ -64,6 +64,28 @@ h2 {
     transition: all 0.3s ease;
 }
 
+.condition-item {
+    /* Add to existing condition-item styles */
+    touch-action: none; /* Prevents default touch actions */
+    user-select: none; /* Prevents text selection while dragging */
+}
+
+.condition-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #ddd;
+}
+
+.condition-item.dragging {
+    opacity: 0.5;
+    background-color: #e8e8e8;
+}
+
+.board-cell.drag-over {
+    background-color: #f0f0f0;
+    border: 0.2rem dashed #000;
+}
+
 .condition-item:hover {
     background-color: #e0e0e0;
     transform: translateY(-0.2rem);
