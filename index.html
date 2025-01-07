@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bills Playoff Bingo</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Create Your Bingo Board</h1>
+        
+        <!-- Conditions Pool -->
+        <div id="conditionsPool" class="conditions-pool">
+            <h2>Available Conditions</h2>
+            <ul class="conditions-list">
+                <li class="condition-item" draggable="true" data-condition-id="1">
+                    <span class="condition-text">Example Condition 1</span>
+                    <span class="instance-counter">Available: 1</span>
+                </li>
+                <li class="condition-item" draggable="true" data-condition-id="2">
+                    <span class="condition-text">Example Condition 2</span>
+                    <span class="instance-counter">Available: 2</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Form wrapping the board -->
+        <form id="bingoForm" action="/submit-board" method="POST">
+            <div id="bingoBoard" class="bingo-board">
+                <div class="board-cell empty" data-row="0" data-col="0">Drop here</div>
+                <div class="board-cell empty" data-row="0" data-col="1">Drop here</div>
+                <div class="board-cell empty" data-row="0" data-col="2">Drop here</div>
+                <div class="board-cell empty" data-row="0" data-col="3">Drop here</div>
+                <div class="board-cell empty" data-row="0" data-col="4">Drop here</div>
+                
+                <div class="board-cell empty" data-row="1" data-col="0">Drop here</div>
+                <div class="board-cell empty" data-row="1" data-col="1">Drop here</div>
+                <div class="board-cell empty" data-row="1" data-col="2">Drop here</div>
+                <div class="board-cell empty" data-row="1" data-col="3">Drop here</div>
+                <div class="board-cell empty" data-row="1" data-col="4">Drop here</div>
+                
+                <div class="board-cell empty" data-row="2" data-col="0">Drop here</div>
+                <div class="board-cell empty" data-row="2" data-col="1">Drop here</div>
+                <div class="board-cell center true" data-row="2" data-col="2">FREE SPACE</div>
+                <div class="board-cell empty" data-row="2" data-col="3">Drop here</div>
+                <div class="board-cell empty" data-row="2" data-col="4">Drop here</div>
+                
+                <div class="board-cell empty" data-row="3" data-col="0">Drop here</div>
+                <div class="board-cell empty" data-row="3" data-col="1">Drop here</div>
+                <div class="board-cell empty" data-row="3" data-col="2">Drop here</div>
+                <div class="board-cell empty" data-row="3" data-col="3">Drop here</div>
+                <div class="board-cell empty" data-row="3" data-col="4">Drop here</div>
+                
+                <div class="board-cell empty" data-row="4" data-col="0">Drop here</div>
+                <div class="board-cell empty" data-row="4" data-col="1">Drop here</div>
+                <div class="board-cell empty" data-row="4" data-col="2">Drop here</div>
+                <div class="board-cell empty" data-row="4" data-col="3">Drop here</div>
+                <div class="board-cell empty" data-row="4" data-col="4">Drop here</div>
+            </div>
+
+            <!-- Hidden input to store board data -->
+            <input type="hidden" id="boardData" name="boardData" value="">
+            
+            <button type="submit" id="submitButton" class="submit-btn" disabled>Submit Board</button>
+        </form>
+    </div>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

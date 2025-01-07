@@ -1,0 +1,207 @@
+/* Base settings */
+html {
+    font-size: 62.5%;
+}
+
+body {
+    font-size: 1.6rem;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container styling */
+.container {
+    max-width: 120rem;
+    width: 90%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 3.2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h2 {
+    font-size: 2.4rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Conditions pool styling */
+.conditions-pool {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    border: 0.2rem solid #ccc;
+    border-radius: 0.8rem;
+    min-height: 10rem;
+}
+
+.conditions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.condition-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 0.1rem solid #666;
+    border-radius: 0.4rem;
+    cursor: move;
+    background-color: #f0f0f0;
+    font-size: 1.4rem;
+    transition: all 0.3s ease;
+}
+
+.condition-item:hover {
+    background-color: #e0e0e0;
+    transform: translateX(0.5rem);
+}
+
+.condition-item.hidden {
+    display: none;
+}
+
+.condition-text {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.instance-counter {
+    font-size: 1.2rem;
+    color: #666;
+    white-space: nowrap;
+}
+
+/* Board styling */
+.bingo-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.8rem;
+    width: min(60rem, 90vw); /* Use viewport width if screen is too narrow */
+    margin: 0 auto;
+}
+
+.board-cell {
+    aspect-ratio: 1;
+    border: 0.2rem solid #333;
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: background-color 0.3s ease;
+    /* Use viewport-relative minimum height for very small screens */
+    min-height: min(8rem, 15vw);
+    /* Allow text to wrap on small screens */
+    word-break: break-word;
+    hyphens: auto;
+}
+
+/* Cell states */
+.board-cell.center {
+    background-color: #90EE90;
+}
+
+.board-cell.undefined {
+    background-color: #ADD8E6;
+}
+
+.board-cell.true {
+    background-color: #90EE90;
+}
+
+.board-cell.false {
+    background-color: #FFB6C1;
+}
+
+.board-cell.empty {
+    background-color: white;
+    border: 0.2rem dashed #666;
+}
+
+.board-cell.drag-over {
+    border: 0.2rem dashed #000;
+    background-color: #f0f0f0;
+}
+
+/* Button styling */
+.submit-btn {
+    display: block;
+    margin: 2rem auto;
+    padding: 1rem 2rem;
+    font-size: 1.6rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+/* Media Queries for smaller screens */
+@media screen and (max-width: 48em) { /* 768px */
+    .container {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 2.4rem;
+    }
+
+    h2 {
+        font-size: 2rem;
+    }
+
+    .conditions-pool {
+        padding: 1rem;
+    }
+
+    .condition-item {
+        font-size: 1.2rem;
+        padding: 0.8rem;
+    }
+
+    .board-cell {
+        padding: 0.5rem;
+        font-size: 1.2rem;
+    }
+    
+    /* Adjust hover effect for touch devices */
+    .condition-item:hover {
+        transform: none;
+    }
+}
+
+/* For very small screens */
+@media screen and (max-width: 30em) { /* 480px */
+    h1 {
+        font-size: 2rem;
+    }
+
+    .conditions-list {
+        gap: 0.5rem;
+    }
+
+    .condition-item {
+        padding: 0.8rem;
+    }
+}
