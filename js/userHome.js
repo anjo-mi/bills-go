@@ -26,14 +26,16 @@ class BoardStatsCalculator {
             grid[2][2],
             grid[3][3],
             grid[4][4]
-        ];
+        ];  // Main diagonal top-left to bottom-right
+        
         const diagonal2 = [
             grid[0][4],
             grid[1][3],
             grid[2][2],
             grid[3][1],
             grid[4][0]
-        ];
+        ];  // Main diagonal top-right to bottom-left
+        
         this._evaluateLine(diagonal1, results);
         this._evaluateLine(diagonal2, results);
 
