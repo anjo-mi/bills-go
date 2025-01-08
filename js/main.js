@@ -252,10 +252,16 @@ class GameManager {
             // Add touch events
             newCell.addEventListener('touchend', e => this.handleTouchEnd(e));
             
-            // If cell already has a condition, make it draggable
+            // If cell already has a condition, make it draggable and add touch listeners
             if (newCell.dataset.condition) {
+                // Ensure draggable
+                newCell.draggable = true;
+                
+                // Add drag and touch listeners explicitly
                 this.setupDragListeners(newCell);
                 this.setupTouchListeners(newCell);
+                
+                // Mark that listeners have been added
                 newCell.hasListeners = true;
             }
         });
@@ -527,7 +533,7 @@ class GameManager {
             `.board-cell[data-row="${row}"][data-col="${col}"]`
         );
         const condition = this.board[row][col];
-
+    
         if (condition) {
             cell.textContent = condition.description;
             cell.classList.remove('empty');
@@ -538,9 +544,10 @@ class GameManager {
             cell.draggable = true;
             cell.dataset.condition = condition.description;
             
-            // Add drag handlers if they haven't been added yet
+            // Add drag and touch handlers if they haven't been added yet
             if (!cell.hasListeners) {
                 this.setupDragListeners(cell);
+                this.setupTouchListeners(cell);
                 cell.hasListeners = true;
             }
         } else {
