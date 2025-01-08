@@ -244,11 +244,20 @@ class GameManager {
             const newCell = cell.cloneNode(true);
             cell.parentNode.replaceChild(newCell, cell);
             
-            // Add new listeners
+            // Add drop events to all cells
             newCell.addEventListener('dragover', e => this.handleDragOver(e));
             newCell.addEventListener('dragleave', e => this.handleDragLeave(e));
             newCell.addEventListener('drop', e => this.handleDrop(e));
+            
+            // Add touch events
             newCell.addEventListener('touchend', e => this.handleTouchEnd(e));
+            
+            // If cell already has a condition, make it draggable
+            if (newCell.dataset.condition) {
+                this.setupDragListeners(newCell);
+                this.setupTouchListeners(newCell);
+                newCell.hasListeners = true;
+            }
         });
     }
 
@@ -263,7 +272,6 @@ class GameManager {
         try {
             data = JSON.parse(e.dataTransfer.getData('text/plain'));
         } catch {
-            // If data transfer fails, use draggedItem properties
             if (this.draggedItem) {
                 data = {
                     condition: this.draggedItem.dataset.condition,
@@ -282,50 +290,70 @@ class GameManager {
             parseInt(cell.dataset.col)
         ];
 
-        // Handle center square
+        // Don't allow dropping on center square
         if (row === 2 && col === 2) return;
 
-        // If dragging from the pool to an empty cell
-        if (data.origin === 'pool' && !this.board[row][col]) {
+        // Handle different drop scenarios
+        if (data.origin === 'pool') {
+            // Dropping from pool to board
             if (condition.available > 0) {
-                this.placeConditionOnBoard(condition, row, col);
+                // If cell is occupied, return that condition to pool
+                if (this.board[row][col]) {
+                    const existingCondition = this.board[row][col];
+                    existingCondition.available++;
+                    this.updateConditionDisplay(existingCondition);
+                }
+                
+                // Place new condition
+                this.board[row][col] = condition;
                 condition.available--;
                 this.updateConditionDisplay(condition);
+                this.updateCellDisplay(row, col);
             }
-        }
-        // If dragging from one cell to another
-        else if (data.origin !== 'pool') {
+        } else {
+            // Moving between board cells
             const [fromRow, fromCol] = data.origin.split(',').map(Number);
-            // Swap positions if both cells have conditions
+            if (isNaN(fromRow) || isNaN(fromCol)) return;
+            
+            // Swap if target cell is occupied
             if (this.board[row][col]) {
                 const temp = this.board[row][col];
                 this.board[row][col] = this.board[fromRow][fromCol];
                 this.board[fromRow][fromCol] = temp;
-                this.updateCellDisplay(row, col);
-                this.updateCellDisplay(fromRow, fromCol);
-            }
-            // Move to empty cell
-            else {
+            } else {
+                // Move to empty cell
                 this.board[row][col] = this.board[fromRow][fromCol];
                 this.board[fromRow][fromCol] = null;
-                this.updateCellDisplay(row, col);
-                this.updateCellDisplay(fromRow, fromCol);
             }
+            
+            this.updateCellDisplay(row, col);
+            this.updateCellDisplay(fromRow, fromCol);
         }
 
         this.checkBoardCompletion();
     }
 
-    setupDragListeners(element) {
-        element.draggable = true;
-        element.addEventListener('dragstart', e => this.handleDragStart(e));
-        element.addEventListener('dragend', e => this.handleDragEnd(e));
+    // Helper method to clear a cell and return its condition to the pool
+    clearCell(row, col) {
+        const condition = this.board[row][col];
+        if (condition) {
+            condition.available++;
+            this.updateConditionDisplay(condition);
+            this.board[row][col] = null;
+            this.updateCellDisplay(row, col);
+        }
     }
-    
+
     setupTouchListeners(element) {
         element.addEventListener('touchstart', e => this.handleTouchStart(e), { passive: false });
         element.addEventListener('touchmove', e => this.handleTouchMove(e), { passive: false });
         element.addEventListener('touchend', e => this.handleTouchEnd(e));
+    }
+    
+    setupDragListeners(element) {
+        element.draggable = true;
+        element.addEventListener('dragstart', e => this.handleDragStart(e));
+        element.addEventListener('dragend', e => this.handleDragEnd(e));
     }
     
     handleDragStart(e) {
@@ -339,38 +367,64 @@ class GameManager {
         };
         e.dataTransfer.setData('text/plain', JSON.stringify(data));
     }
-    
+
     handleDragEnd(e) {
         e.target.classList.remove('dragging');
         document.querySelectorAll('.board-cell').forEach(cell => 
             cell.classList.remove('drag-over'));
+
+        // Check if the drag ended outside any valid drop targets
+        if (this.draggedItemOrigin !== 'pool') {
+            const [row, col] = this.draggedItemOrigin.split(',').map(Number);
+            // Only process if it's actually from a board cell
+            if (!isNaN(row) && !isNaN(col)) {
+                const condition = this.board[row][col];
+                if (condition) {
+                    // Return to pool if dropped outside
+                    if (e.dataTransfer.dropEffect === 'none') {
+                        condition.available++;
+                        this.updateConditionDisplay(condition);
+                        this.board[row][col] = null;
+                        this.updateCellDisplay(row, col);
+                    }
+                }
+            }
+        }
     }
-    
+
     handleDragOver(e) {
+        // This preventDefault is CRUCIAL for allowing drops
         e.preventDefault();
-        e.target.classList.add('drag-over');
+        
+        const cell = e.target.closest('.board-cell');
+        if (cell && !cell.classList.contains('center')) {
+            cell.classList.add('drag-over');
+        }
     }
-    
+
     handleDragLeave(e) {
-        e.target.classList.remove('drag-over');
+        const cell = e.target.closest('.board-cell');
+        if (cell) {
+            cell.classList.remove('drag-over');
+        }
     }
     
     handleTouchStart(e) {
-        if (!e.target.closest('.condition-item')) return;
-        e.preventDefault();
+        const touchedElement = e.target.closest('.condition-item') || e.target.closest('.board-cell');
+        if (!touchedElement || (touchedElement.classList.contains('board-cell') && !touchedElement.dataset.condition)) return;
         
-        const item = e.target.closest('.condition-item');
-        this.draggedItem = item;
-        this.draggedItemOrigin = this.getItemLocation(item);
+        e.preventDefault();
+        this.draggedItem = touchedElement;
+        this.draggedItemOrigin = this.getItemLocation(touchedElement);
         
         const touch = e.touches[0];
         this.touchStartX = touch.clientX;
         this.touchStartY = touch.clientY;
         
-        item.classList.add('dragging');
+        touchedElement.classList.add('dragging');
         
-        // Create visual feedback for dragging
-        const clone = item.cloneNode(true);
+        // Create visual drag helper
+        const clone = touchedElement.cloneNode(true);
         clone.id = 'dragHelper';
         clone.style.position = 'fixed';
         clone.style.top = `${touch.clientY - 25}px`;
@@ -380,40 +434,56 @@ class GameManager {
         clone.style.zIndex = '1000';
         document.body.appendChild(clone);
     }
-    
+
     handleTouchMove(e) {
         if (!this.draggedItem) return;
         e.preventDefault();
-    
+
         const touch = e.touches[0];
         const helper = document.getElementById('dragHelper');
         if (helper) {
             helper.style.top = `${touch.clientY - 25}px`;
             helper.style.left = `${touch.clientX - 25}px`;
         }
-    
-        // Find the cell under the touch point
-        const cell = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (cell && cell.classList.contains('board-cell')) {
-            // Remove drag-over from all cells
-            document.querySelectorAll('.board-cell').forEach(c => 
-                c.classList.remove('drag-over'));
-            // Add drag-over to current cell
+
+        // Remove drag-over from all cells
+        document.querySelectorAll('.board-cell').forEach(c => 
+            c.classList.remove('drag-over'));
+
+        // Find the element under the touch point
+        const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+        const cell = elementAtPoint?.closest('.board-cell');
+        
+        // Add drag-over if we're over a valid cell
+        if (cell && !cell.classList.contains('center')) {
             cell.classList.add('drag-over');
         }
+
+        // Check if we're outside the board and conditions area
+        const isOverValidDropZone = elementAtPoint?.closest('.bingo-board') || 
+                                  elementAtPoint?.closest('.conditions-pool');
+        if (!isOverValidDropZone && helper) {
+            helper.style.opacity = '0.3'; // Visual feedback that this will remove the condition
+        } else if (helper) {
+            helper.style.opacity = '0.8';
+        }
     }
-    
+
     handleTouchEnd(e) {
         if (!this.draggedItem) return;
         e.preventDefault();
-    
+
         const helper = document.getElementById('dragHelper');
         if (helper) helper.remove();
-    
+
         const touch = e.changedTouches[0];
-        const cell = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-        if (cell && cell.classList.contains('board-cell')) {
+        const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+        const cell = elementAtPoint?.closest('.board-cell');
+
+        this.draggedItem.classList.remove('dragging');
+
+        // Check if we're dropping on a valid cell
+        if (cell) {
             this.handleDrop({ 
                 preventDefault: () => {},
                 target: cell,
@@ -424,13 +494,25 @@ class GameManager {
                     })
                 }
             });
+        } 
+        // If not dropping on a cell, check if we're returning to pool
+        else if (this.draggedItemOrigin !== 'pool') {
+            // Return condition to pool
+            const [row, col] = this.draggedItemOrigin.split(',').map(Number);
+            if (!isNaN(row) && !isNaN(col)) {
+                const condition = this.board[row][col];
+                if (condition) {
+                    condition.available++; // Return to pool
+                    this.updateConditionDisplay(condition);
+                    this.board[row][col] = null;
+                    this.updateCellDisplay(row, col);
+                }
+            }
         }
-    
-        this.draggedItem.classList.remove('dragging');
+
+        // Cleanup
         this.draggedItem = null;
         this.draggedItemOrigin = null;
-    
-        // Remove drag-over from all cells
         document.querySelectorAll('.board-cell').forEach(cell => 
             cell.classList.remove('drag-over'));
     }
@@ -451,9 +533,22 @@ class GameManager {
             cell.classList.remove('empty');
             cell.classList.add(condition.status === undefined ? 'undefined' : 
                              condition.status ? 'true' : 'false');
+            
+            // Make cell draggable when it contains a condition
+            cell.draggable = true;
+            cell.dataset.condition = condition.description;
+            
+            // Add drag handlers if they haven't been added yet
+            if (!cell.hasListeners) {
+                this.setupDragListeners(cell);
+                cell.hasListeners = true;
+            }
         } else {
             cell.textContent = 'Drop here';
             cell.className = 'board-cell empty';
+            cell.draggable = false;
+            cell.dataset.condition = '';
+            cell.hasListeners = false;
         }
     }
 

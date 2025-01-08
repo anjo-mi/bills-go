@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bills Playoff Bingo Leaderboard</title>
+    <title>Your Bills Playoff Bingo Boards</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -26,22 +26,30 @@
     </nav>
     
     <div class="container">
-        <h1>Bills Playoff Bingo Leaderboard</h1>
-
-        <!-- Winners Section -->
-        <div class="leaderboard-section winners-section">
-            <h2>Winners</h2>
-            <div id="winnersContainer" class="board-list">
-                <!-- Will be populated with winners or show "No Winners" message -->
+        <!-- User info banner -->
+        <div class="user-banner">
+            <h1><span id="username">Username</span>'s Boards</h1>
+            <div class="user-stats">
+                <div class="user-stat">
+                    <span class="stat-label">Active Boards:</span>
+                    <span id="boardCount" class="stat-value">0</span>
+                </div>
+                <div class="user-stat">
+                    <span class="stat-label">Best Line:</span>
+                    <span id="bestLine" class="stat-value">0</span>
+                </div>
             </div>
         </div>
 
-        <!-- Participants Section -->
-        <div class="leaderboard-section participants-section">
-            <h2>Participants</h2>
-            <div id="participantsContainer" class="board-list">
-                <!-- Will be populated with sorted participants -->
-            </div>
+        <!-- Create new board button - only shown if before deadline -->
+        <div id="newBoardContainer" class="new-board-container">
+            <button id="createNewBoard" class="create-btn">Create New Board</button>
+            <p class="deadline-info">You can create new boards until 1PM EST on Sunday</p>
+        </div>
+
+        <!-- Boards list -->
+        <div class="boards-list" id="boardsList">
+            <!-- Boards will be added here -->
         </div>
 
         <!-- Modal for displaying full board -->
@@ -49,7 +57,7 @@
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
                 <div class="modal-board-container">
-                    <h3 id="modalUsername">User's Board</h3>
+                    <h3>Board <span id="modalBoardNumber"></span></h3>
                     <div class="stats-summary">
                         <p>Completed Lines: <span id="modalCompletedLines">0</span></p>
                         <p>Max True in Line: <span id="modalMaxTrue">0</span></p>
@@ -64,6 +72,6 @@
         </div>
     </div>
 
-    <script src="/js/leaderboard.js"></script>
+    <script src="/js/userHome.js"></script>
 </body>
 </html>

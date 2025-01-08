@@ -17,6 +17,12 @@ class LeaderboardManager {
                 this.closeModal();
             }
         });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('boardModal').style.display === 'block') {
+                this.closeModal();
+            }
+        });
     }
 
     loadBoards() {
