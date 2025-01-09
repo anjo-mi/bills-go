@@ -29,6 +29,15 @@ MongoClient.connect(MongoURL)
 
         app.post('/auth/signup', async (req,res) => {
             try{
+
+                const existingUser = await db.collection('users').findOne({
+                    username: req.body.username
+                });
+        
+                if (existingUser) {
+                    return res.status(409).json({ error: 'Username already exists' });
+                }
+
                 const result = await db.collection('users').insertOne({
                     username: req.body.username,
                     password: req.body.password,
