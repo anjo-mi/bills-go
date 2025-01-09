@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('sessionId', sessionData.sessionId);
                 sessionStorage.setItem('username', sessionData.username);
                 sessionStorage.setItem('sessionExpires', sessionData.expiresAt);
+                sessionStorage.setItem('isLoggedIn', 'true');
                 window.location.href = '/index.html';
             } else {
                 alert('Invalid username or password');
@@ -83,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('sessionId', sessionData.sessionId);
                 sessionStorage.setItem('username', sessionData.username);
                 sessionStorage.setItem('sessionExpires', sessionData.expiresAt);
+                sessionStorage.setItem('isLoggedIn', 'true');
                 window.location.href = '/index.html';
             } else {
                 alert('Username already exists');
