@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // This is a placeholder until we set up actual authentication
+    const sessionId = sessionStorage.getItem('sessionId');
+    const expires = new Date(sessionStorage.getItem('sessionExpires'));
     const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
+    
+    if (!sessionId || !isLoggedIn || expires < new Date()) {
         window.location.href = '/login.html';
     }
 });

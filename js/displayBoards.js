@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // This is a placeholder until we set up actual authentication
+    const sessionId = sessionStorage.getItem('sessionId');
+    const expires = new Date(sessionStorage.getItem('sessionExpires'));
     const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
+    
+    if (!sessionId || !isLoggedIn || expires < new Date()) {
         window.location.href = '/login.html';
     }
 });
@@ -92,110 +94,34 @@ class BoardsDisplay {
         this.currentBoardIndex = 0;
         this.boards = [];
         this.setupEventListeners();
-        this.boards = this.generateTestBoards();
+        this.loadUserBoards();
         this.renderCurrentBoard();
         this.checkDeadline();
     }
 
-    generateTestBoards() {
-        const conditions = [
-            { description: "Josh Allen TD Pass", status: true },
-            { description: "Bills Score First", status: true },
-            { description: "Defensive Turnover", status: true },
-            { description: "Stefon Diggs TD", status: true },
-            { description: "50+ Yard Play", status: true },
-            { description: "4th Down Stop", status: false },
-            { description: "Missed FG", status: false },
-            { description: "Punt Return TD", status: undefined },
-            { description: "Safety", status: undefined },
-            { description: "Trick Play", status: undefined }
-        ];
-
-        const createGrid = (config = {}) => {
-            const grid = Array(5).fill(null).map(() => Array(5).fill(null));
-            
-            // Add center FREE SPACE
-            grid[2][2] = { description: "FREE SPACE", status: true };
-
-            // Create winning line if specified
-            if (config.winningLine) {
-                const row = config.winningLine;
-                for (let j = 0; j < 5; j++) {
-                    grid[row][j] = { 
-                        description: conditions[j].description, 
-                        status: true 
-                    };
+    async loadUserBoards(){
+        try{
+            const response = await fetch('/user-boards', {
+                method: 'GET',
+                headers: {
+                    'sessionid': sessionStorage.getItem('sessionId'),
+                    'username': sessionStorage.getItem('username')
                 }
-            }
+            });
 
-            // Create partial line if specified
-            if (config.partialLine) {
-                const { row, count } = config.partialLine;
-                for (let j = 0; j < count; j++) {
-                    if (!grid[row][j]) { // Don't overwrite if already set
-                        grid[row][j] = { 
-                            description: conditions[j].description, 
-                            status: true 
-                        };
-                    }
-                }
+            if (response.ok){
+                const data = await response.json();
+                this.boards = data.boards.map(board => ({
+                    ...board,
+                    stats: BoardStatsCalculator.calculateStats(board.grid)
+                }))
+            }else {
+                window.location.href = '/login.html';
             }
-
-            // Fill remaining spaces
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    if (!grid[i][j]) { // Only fill empty spaces
-                        const randomStatus = Math.random();
-                        let status;
-                        if (randomStatus < 0.3) status = true;
-                        else if (randomStatus < 0.6) status = false;
-                        else status = undefined;
-                        
-                        const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-                        grid[i][j] = { 
-                            description: randomCondition.description, 
-                            status: status 
-                        };
-                    }
-                }
-            }
-            return grid;
-        };
-
-        // Create test boards with various scenarios
-        const boards = [
-            {
-                username: "BillsMafia1",
-                boardNumber: 1,
-                grid: createGrid({ winningLine: 0 })  // Board with completed top row
-            },
-            {
-                username: "BillsMafia2",
-                boardNumber: 1,
-                grid: createGrid({ partialLine: { row: 0, count: 4 } })  // Board with 4 true in top row
-            },
-            {
-                username: "BillsFan1",
-                boardNumber: 1,
-                grid: createGrid({ partialLine: { row: 0, count: 4 } })  // Another board with 4 true
-            },
-            {
-                username: "BillsFan2",
-                boardNumber: 1,
-                grid: createGrid({ partialLine: { row: 1, count: 3 } })  // Board with 3 true in a row
-            },
-            {
-                username: "BillsFan3",
-                boardNumber: 2,
-                grid: createGrid()  // Random board
-            }
-        ];
-
-        // Calculate real stats for each board
-        return boards.map(board => ({
-            ...board,
-            stats: BoardStatsCalculator.calculateStats(board.grid)
-        }));
+        }catch(err){
+            console.error('error loading boards:', err);
+            window.location.href = '/login.html';
+        }
     }
 
     setupEventListeners() {

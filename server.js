@@ -114,6 +114,37 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        app.get('/user-boards', async (req,res) => {
+            const body = req.body
+            const headers = req.headers
+            console.log({body, headers})
+            try{
+                const session = await db.collection('sessions').findOne({
+                    _id: new ObjectId(req.headers.sessionid)
+                });
+
+                console.log({session})
+
+                if (!session || session.expiresAt < new Date()){
+                    return res.status(401).json({error: 'session expired'});
+                }
+
+                const user = await db.collection('users').findOne({
+                    username: req.headers.username
+                })
+
+                console.log({user})
+
+                if (!user){
+                    return res.status(404).json({error: 'user not found'})
+                }
+
+                res.json({boards: user.boards || [] })
+            }catch(err){
+                console.error('server error:', err);
+                res.status(500).json({error: 'server error'});
+            }
+        })
 
         app.listen(process.env.port || 3000, () => console.log('the server is running'))
     })
