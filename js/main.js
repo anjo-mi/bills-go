@@ -14,16 +14,15 @@ class Condition {
         this.status = undefined;
         this.allowMultiple = allowMultiple;
         this.maxInstances = maxInstances;
-        this.available = maxInstances;  // Add this new property
+        this.available = maxInstances;
     }
 }
 
 class Board {
     constructor() {
         this.grid = Array(5).fill(null).map(() => Array(5).fill(null));        
-        // Set center square with automatic true condition
         const centerCondition = new Condition("Free Space");
-        centerCondition.status = true;  // Direct assignment instead of updateStatus
+        centerCondition.status = true;
         this.grid[2][2] = centerCondition;
     }
 
@@ -53,11 +52,11 @@ class Board {
 
     getCompletedLines() {
         const results = {
-            completedLines: 0,           // lines with all true conditions
-            maxTrueConditions: 0,        // largest number of true conditions in any line
-            linesWithMaxTrue: 0,         // number of lines with max true conditions
-            linesByTrueCount: new Map(), // map of true count to number of lines with that count
-            totalTrueConditions: 0       // total number of true conditions on board
+            completedLines: 0,           
+            maxTrueConditions: 0,        
+            linesWithMaxTrue: 0,         
+            linesByTrueCount: new Map(), 
+            totalTrueConditions: 0       
         };
 
         // Check rows
@@ -610,12 +609,50 @@ class GameManager {
         );
         submitButton.disabled = !isComplete;
     }
+
+    handleSubmit(e){
+        e.preventDefault();
+
+        if (!this.isBoardComplete()){
+            alert('All squares must be filled before submitting')
+            return
+        }
+
+        const boardData = {
+            username: sessionStorage.getItem('username'),
+            sessionId: sessionStorage.getItem('sessionId'),
+            grid: this.board.map(row => 
+                row.map(cell => cell ? {
+                    description: cell.description,
+                    status: cell.status,
+                    allowMultiple: cell.allowMultiple,
+                    maxInstances: cell.maxInstances
+                } : null)
+            )
+        };
+
+        fetch('/submit-board', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(boardData)
+        })
+        .then(response => {
+            if (response.ok){
+                window.location.href = '/userBoards.html'
+            }else{
+                alert('submission error')
+            }
+        })
+        .catch(err => console.error('submission error: ', err))
+    }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const game = new GameManager();
     
-    // Set up form submission
-    // const form = document.getElementById('bingoForm');
-    // form.addEventListener('submit', (e) => game.handleSubmit(e));
+    const form = document.getElementById('bingoForm');
+    form.addEventListener('submit', (e) => game.handleSubmit(e));
 });

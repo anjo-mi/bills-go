@@ -26,7 +26,7 @@ MongoClient.connect(MongoURL)
     .then(client => {
         db = client.db('bills-go');
 
-
+        // sign up - if not already existing, add user to collection, create session for the user and redirect
         app.post('/auth/signup', async (req,res) => {
             try{
 
@@ -49,7 +49,7 @@ MongoClient.connect(MongoURL)
                 await db.collection('sessions').insertOne(session);
                 res.json({
                     success: true,
-                    sessionID: session._id,
+                    sessionId: session._id,
                     username: session.username,
                     expiresAt: session.expiresAt
                 });
@@ -58,6 +58,7 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        // login - verify user exists, create new session for the user
         app.post('/auth/login', async (req,res) => {
             try {
                 const user = await db.collection('users').findOne({
@@ -70,7 +71,7 @@ MongoClient.connect(MongoURL)
                     await db.collection('sessions').insertOne(session);
                     res.json({
                         success: true,
-                        sessionID: session._id,
+                        sessionId: session._id,
                         username: session.username,
                         expiresAt: session.expiresAt
                     });
@@ -82,7 +83,27 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        app.post('/submit-board', async (req,res) => {
+            try{
+                const session = await db.collection('sessions').findOne({
+                    _id: req.body.sessionId
+                });
 
+                if (!session || session.expiresAt < new Date()){
+                    return res.status(401).json({error: 'log in ya bozo'})
+                }
+
+                await db.collection('users').updateOne(
+                    {username: req.body.username},
+                    {$push: {boards: req.body.grid}}
+                )
+
+                res.json({success: true})
+
+            } catch(error){
+                res.status(500).json({error: 'server error'});
+            }
+        })
 
 
         app.listen(process.env.port || 3000, () => console.log('the server is running'))
