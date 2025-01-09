@@ -1,7 +1,7 @@
 const MongoURL = 'mongodb+srv://nojaimk:N**buf52@cluster0.qbmen.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 
 const express = require('express');
-const { MongoClient } = require('mongodb').MongoClient;
+const MongoClient = require('mongodb').MongoClient;
 const path = require('path');
 
 const app = express();
@@ -33,6 +33,7 @@ MongoClient.connect(MongoURL)
                 const existingUser = await db.collection('users').findOne({
                     username: req.body.username
                 });
+
         
                 if (existingUser) {
                     return res.status(409).json({ error: 'Username already exists' });
@@ -44,7 +45,7 @@ MongoClient.connect(MongoURL)
                     boards: []
                 })
 
-                const session = new Session(result.insertedId, req,body.username);
+                const session = new Session(result.insertedId, req.body.username);
                 await db.collection('sessions').insertOne(session);
                 res.json({
                     success: true,
