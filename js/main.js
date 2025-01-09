@@ -1,3 +1,11 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // This is a placeholder until we set up actual authentication
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+        window.location.href = '/login.html';
+    }
+});
+
 class Condition {
     constructor(description, allowMultiple = false, maxInstances = 1) {
         this.description = description;

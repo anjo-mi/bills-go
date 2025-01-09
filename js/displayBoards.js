@@ -1,54 +1,10 @@
-// const testBoards = [
-//     {
-//         grid: Array(5).fill().map(() => Array(5).fill(null)),
-//         stats: {
-//             completedLines: 1,
-//             maxTrueConditions: 4,
-//             linesWithMaxTrue: 2,
-//             totalTrueConditions: 12
-//         }
-//     },
-//     {
-//         grid: Array(5).fill().map(() => Array(5).fill(null)),
-//         stats: {
-//             completedLines: 0,
-//             maxTrueConditions: 3,
-//             linesWithMaxTrue: 1,
-//             totalTrueConditions: 8
-//         }
-//     },
-//     {
-//         grid: Array(5).fill().map(() => Array(5).fill(null)),
-//         stats: {
-//             completedLines: 2,
-//             maxTrueConditions: 5,
-//             linesWithMaxTrue: 2,
-//             totalTrueConditions: 15
-//         }
-//     }
-// ];
-
-// // Fill test boards with sample conditions
-// testBoards.forEach(board => {
-//     const conditions = [
-//         { description: "Josh Allen TD", status: true },
-//         { description: "Bills Score First", status: false },
-//         { description: "Defensive TO", status: undefined },
-//         { description: "Stefon Diggs TD", status: true },
-//         { description: "50+ Yard Play", status: false }
-//     ];
-
-//     board.grid = board.grid.map(row => 
-//         row.map(() => {
-//             const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-//             return { ...randomCondition };
-//         })
-//     );
-
-//     // Set center square
-//     board.grid[2][2] = { description: "FREE SPACE", status: true };
-// });
-
+document.addEventListener('DOMContentLoaded', () => {
+    // This is a placeholder until we set up actual authentication
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+        window.location.href = '/login.html';
+    }
+});
 
 class BoardStatsCalculator {
     static calculateStats(grid) {
