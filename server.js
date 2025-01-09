@@ -1,7 +1,7 @@
 const MongoURL = 'mongodb+srv://nojaimk:N**buf52@cluster0.qbmen.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 
 const express = require('express');
-const MongoClient = require('mongodb').MongoClient;
+const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 
 const app = express();
@@ -84,10 +84,18 @@ MongoClient.connect(MongoURL)
         })
 
         app.post('/submit-board', async (req,res) => {
+
+            console.log('session ID:', req.body.sessionId)
             try{
+
+                const sessionId = new ObjectId(req.body.sessionId)
+                console.log('looking for session:', sessionId)
+
                 const session = await db.collection('sessions').findOne({
-                    _id: req.body.sessionId
+                    _id: sessionId
                 });
+
+                console.log('session found:', session)
 
                 if (!session || session.expiresAt < new Date()){
                     return res.status(401).json({error: 'log in ya bozo'})
@@ -101,6 +109,7 @@ MongoClient.connect(MongoURL)
                 res.json({success: true})
 
             } catch(error){
+                console.error('server error: ', error)
                 res.status(500).json({error: 'server error'});
             }
         })

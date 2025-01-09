@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const sessionData = await response.json();
-                sessionStorage.setItem('sessionId', sessionData.sessionId);
+                sessionStorage.setItem('sessionId', sessionData.sessionId.toString());
                 sessionStorage.setItem('username', sessionData.username);
                 sessionStorage.setItem('sessionExpires', sessionData.expiresAt);
                 sessionStorage.setItem('isLoggedIn', 'true');

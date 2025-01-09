@@ -645,7 +645,7 @@ class GameManager {
                 alert('submission error')
             }
         })
-        .catch(err => console.error('submission error: ', err))
+        .catch(err => console.error('error of submission: ', err))
     }
 
 }
