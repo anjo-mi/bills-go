@@ -24,7 +24,9 @@ class Board {
         const centerCondition = new Condition("Free Space");
         centerCondition.status = true;
         this.grid[2][2] = centerCondition;
+        this.isVerified = false;
     }
+
 
     placeCondition(condition, row, col) {
         if (row < 0 || row >= 5 || col < 0 || col >= 5) {

@@ -94,7 +94,7 @@ class BoardStatsCalculator {
 
 class UserHomeManager {
     constructor() {
-        this.username = 'TestUser'; // This would come from session/login
+        this.username = sessionStorage.getItem('username')
         this.boards = [];
         this.setupEventListeners();
         this.loadUserBoards();
@@ -124,10 +124,29 @@ class UserHomeManager {
         });
     }
 
-    loadUserBoards() {
-        this.boards = this.generateTestBoards();
-        this.displayUserInfo();
-        this.displayBoards();
+    async loadUserBoards() {
+        try{
+            const response = await fetch('/user-boards', {
+                method: 'GET',
+                headers: {
+                    'sessionid': sessionStorage.getItem('sessionId'),
+                    'username': this.username
+                }
+            });
+
+            if (response.ok){
+                const data = await response.json();
+                this.boards = data.boards;
+                this.displayUserInfo();
+                this.displayBoards();
+            }else{
+                window.location.href = '/login.html';
+            }
+
+        }catch(err){
+            console.error('error loading boards:', err);
+            window.location.href = '/login.html';
+        }
     }
 
     displayUserInfo() {
@@ -135,7 +154,10 @@ class UserHomeManager {
         document.getElementById('boardCount').textContent = this.boards.length;
         
         // Find best line across all boards
-        const bestLine = Math.max(...this.boards.map(board => board.stats.maxTrueConditions));
+        const bestLine = Math.max(...this.boards.map(board => {
+            const stats = BoardStatsCalculator.calculateStats(board);
+            return stats.maxTrueConditions;
+        }));
         document.getElementById('bestLine').textContent = bestLine;
     }
 
@@ -143,10 +165,9 @@ class UserHomeManager {
         const boardsList = document.getElementById('boardsList');
         boardsList.innerHTML = '';
 
-        // Sort using same logic as leaderboard
-        const sortedBoards = this.sortBoards(this.boards);
-        sortedBoards.forEach((board, index) => {
-            boardsList.appendChild(this.createBoardEntry(board, index + 1));
+        this.boards.forEach((board, index) => {
+            const stats = BoardStatsCalculator.calculateStats(board);
+            boardsList.appendChild(this.createBoardEntry(board, index + 1, stats));
         });
     }
 
@@ -269,9 +290,9 @@ class UserHomeManager {
         }));
     }
 
-    createBoardEntry(board, number) {
+    createBoardEntry(board, number, stats) {
         const entry = document.createElement('div');
-        entry.className = `board-entry ${board.stats.completedLines > 0 ? 'winning' : ''}`;
+        entry.className = `board-entry ${stats.completedLines > 0 ? 'winning' : ''}`;
         entry.innerHTML = `
             <div class="board-info">
                 <div class="username">Board ${number}</div>
@@ -284,24 +305,24 @@ class UserHomeManager {
         `;
 
         entry.querySelector('.view-board-btn').addEventListener('click', () => {
-            this.showBoardModal(board, number);
+            this.showBoardModal(board, number, stats);
         });
 
         return entry;
     }
 
-    showBoardModal(board, number) {
+    showBoardModal(board, number, stats) {
         const modal = document.getElementById('boardModal');
         const modalBoard = document.getElementById('modalBoard');
 
         document.getElementById('modalBoardNumber').textContent = number;
-        document.getElementById('modalCompletedLines').textContent = board.stats.completedLines;
-        document.getElementById('modalMaxTrue').textContent = board.stats.maxTrueConditions;
-        document.getElementById('modalLinesWithMax').textContent = board.stats.linesWithMaxTrue;
-        document.getElementById('modalTotalTrue').textContent = board.stats.totalTrueConditions;
+        document.getElementById('modalCompletedLines').textContent = stats.completedLines;
+        document.getElementById('modalMaxTrue').textContent = stats.maxTrueConditions;
+        document.getElementById('modalLinesWithMax').textContent = stats.linesWithMaxTrue;
+        document.getElementById('modalTotalTrue').textContent = stats.totalTrueConditions;
 
         modalBoard.innerHTML = '';
-        board.grid.forEach((row, rowIndex) => {
+        board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'board-cell';
