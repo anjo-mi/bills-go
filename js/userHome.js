@@ -140,12 +140,16 @@ class UserHomeManager {
                 this.displayUserInfo();
                 this.displayBoards();
             }else{
-                window.location.href = '/login.html';
+                const errorData = await response.json();
+                console.error('Server error:', errorData);
+                // Instead of redirecting, alert the error
+                alert(`Error loading boards: ${errorData.error}`);
             }
 
         }catch(err){
-            console.error('error loading boards:', err);
-            window.location.href = '/login.html';
+            console.error('Error in loadUserBoards:', err);
+            // Instead of redirecting, alert the error
+            alert(`Error: ${err.message}`);
         }
     }
 
@@ -297,8 +301,8 @@ class UserHomeManager {
             <div class="board-info">
                 <div class="username">Board ${number}</div>
                 <div class="board-stats">
-                    Closest Line: ${board.stats.maxTrueConditions}, 
-                    Lines w/ Most: ${board.stats.linesWithMaxTrue}
+                    Closest Line: ${stats.maxTrueConditions}, 
+                    Lines w/ Most: ${stats.linesWithMaxTrue}
                 </div>
             </div>
             <button class="view-board-btn">View Board</button>
