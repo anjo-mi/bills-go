@@ -2,6 +2,7 @@ class User {
     constructor(username, password) {
         this.username = username;
         this.password = password;
+        this.isAdmin = false;
         this.boards = [];
     }
 
@@ -53,8 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('sessionId', sessionData.sessionId.toString());
                 sessionStorage.setItem('username', sessionData.username);
                 sessionStorage.setItem('sessionExpires', sessionData.expiresAt);
+                sessionStorage.setItem('isAdmin', sessionData.isAdmin);
                 sessionStorage.setItem('isLoggedIn', 'true');
-                window.location.href = '/index.html';
+                if (sessionData.isAdmin) {
+                    window.location.href = '/admin.html';
+                } else {
+                    window.location.href = '/index.html';
+                }
             } else {
                 alert('Invalid username or password');
             }
@@ -84,8 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('sessionId', sessionData.sessionId);
                 sessionStorage.setItem('username', sessionData.username);
                 sessionStorage.setItem('sessionExpires', sessionData.expiresAt);
+                sessionStorage.setItem('isAdmin', sessionData.isAdmin);
                 sessionStorage.setItem('isLoggedIn', 'true');
-                window.location.href = '/index.html';
+                if (sessionData.isAdmin) {
+                    window.location.href = '/admin.html';
+                } else {
+                    window.location.href = '/index.html';
+                }
             } else {
                 alert('Username already exists');
             }

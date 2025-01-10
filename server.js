@@ -73,6 +73,7 @@ MongoClient.connect(MongoURL)
                         success: true,
                         sessionId: session._id,
                         username: session.username,
+                        isAdmin: user.isAdmin,
                         expiresAt: session.expiresAt
                     });
                 }else{
@@ -140,6 +141,31 @@ MongoClient.connect(MongoURL)
                 res.status(500).json({error: 'server error'});
             }
         })
+
+        app.post('/create-admin', async (req, res) => {
+            try {
+                // Check if any admin already exists
+                const existingAdmin = await db.collection('users').findOne({ isAdmin: true });
+                if (existingAdmin) {
+                    return res.status(403).json({ error: 'Admin already exists' });
+                }
+        
+                // Create the admin user
+                const adminUser = {
+                    username: req.body.username,
+                    password: req.body.password,
+                    isAdmin: true,
+                    boards: []
+                };
+        
+                await db.collection('users').insertOne(adminUser);
+                res.json({ success: true });
+        
+            } catch (error) {
+                console.error('Server error:', error);
+                res.status(500).json({ error: 'Server error' });
+            }
+        });
 
         app.listen(process.env.port || 3000, () => console.log('the server is running'))
     })
