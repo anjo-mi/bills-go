@@ -28,8 +28,11 @@ class AdminDashboard {
             });
             
             if (response.ok) {
+                console.log('response ok')
                 const users = await response.json();
                 this.displayUsers(users);
+            }else{
+                console.log('async loadUsers issue')
             }
         } catch (error) {
             console.error('Error loading users:', error);
@@ -59,8 +62,11 @@ class AdminDashboard {
             });
             
             if (response.ok) {
+                console.log('response ok for unvf boards')
                 const boards = await response.json();
                 this.displayUnverifiedBoards(boards);
+            }else{
+                console.log('issue with loadunvfboards')
             }
         } catch (error) {
             console.error('Error loading unverified boards:', error);

@@ -226,6 +226,109 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        app.get('/admin/unverified-boards', async(req,res) => {
+            try{
+                const session = await db.collection('sessions').findOne({
+                    _id: new ObjectId(req.headers.sessionid)
+                });
+
+                const adminUser = await db.collection('users').findOne({
+                    _id: session.userId,
+                    isAdmin: true
+                });
+
+                if (!session || !adminUser){
+                    return res.status(401).json({error: 'please hack away anywhere but here'});
+                }
+
+                const users = await db.collection('users').find().toArray();
+                const unverifiedBoards = [];
+
+                users.forEach(user => {
+                    user.boards.forEach((board, index) => {
+                        if (!board.isVerified){
+                            unverifiedBoards.push({
+                                userId: user._id,
+                                username: user.username,
+                                boardIndex: index,
+                                board: board
+                            });
+                        }
+                    });
+                });
+
+                res.json(unverifiedBoards)
+            }catch(err){
+                console.error('error getting unverified boards: ', err);
+                res.status(500).json({error: 'server error'})
+            }
+        });
+
+        app.put('/admin/boards/:userId/:boardIndex/verify', async (req,res) => {
+            try{
+                const session = await db.collection('sessions').findOne({
+                    _id: new ObjectId(req.headers.sessionid)
+                });
+
+                const adminUser = await db.collection('users').findOne({
+                    _id: session.userId,
+                    isAdmin: true
+                });
+
+                if (!session || !adminUser){
+                    return res.status(401).json({error: 'mutumbo!'});
+                }
+
+                await db.collection('users').updateOne(
+                    {_id: new ObjectId(req.params.userId)},
+                    {
+                        $set: {
+                            [`boards.${req.params.boardIndex}.isVerified`]: true
+                        }
+                    }
+                );
+
+                res.json({success: true})
+            }catch(err){
+                console.error('error verifying board: ', err);
+                res.status(500).json({error: 'server error'})
+            }
+        })
+
+        app.delete('/admin/users/:userId', async(req,res) => {
+            try{
+                const session = await db.collection('sessions').findOne({
+                    _id: new ObjectId(req.headers.sessionid)
+                });
+
+                const adminUser = await db.collection('users').findOne({
+                    _id: session.userId,
+                    isAdmin: true
+                });
+
+                if (!session || !adminUser){
+                    return res.status(401).json({error: 'do your hacking elsewhere please'});
+                }
+
+                const userToDelete = await db.collection('users').findOne({
+                    _id: new ObjectId(req.params.userId)
+                });
+
+                if (userToDelete.isAdmin){
+                    return res.status(403).json({error: 'cannot delete admin'});
+                }
+
+                await db.collection('users').deleteOne({
+                    _id: new ObjectId(req.params.userId)
+                });
+
+                res.json({success: true})
+            }catch(err){
+                console.error('error deleting user: ', err);
+                res.status(500).json({error: 'server error'});
+            }
+        });
+
         app.listen(process.env.port || 3000, () => console.log('the server is running'))
     })
     .catch(err => console.error('Mongo connection error: ', err))
