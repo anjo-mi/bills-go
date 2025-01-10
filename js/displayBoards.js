@@ -161,15 +161,13 @@ class BoardsDisplay {
         const currentNum = document.getElementById('currentBoardNum');
         const totalBoards = document.getElementById('totalBoards');
         
-        // Remove disabled state from navigation buttons since we can always navigate
         document.getElementById('prevBoard').disabled = false;
         document.getElementById('nextBoard').disabled = false;
-
-        // Clear existing board
+    
         boardElement.innerHTML = '';
-
-        // Create cells
-        board.grid.forEach((row, rowIndex) => {
+    
+        // board itself is the grid now, so iterate directly over it
+        board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'board-cell';
@@ -184,13 +182,12 @@ class BoardsDisplay {
                 boardElement.appendChild(cellDiv);
             });
         });
-
-        // Update navigation
+    
         currentNum.textContent = this.currentBoardIndex + 1;
         totalBoards.textContent = this.boards.length;
-
-        // Update stats
-        this.updateStats(board.stats);
+    
+        const stats = BoardStatsCalculator.calculateStats(board);
+        this.updateStats(stats);
     }
 
     updateStats(stats) {
