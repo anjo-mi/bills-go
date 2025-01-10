@@ -1,10 +1,11 @@
 class AdminDashboard {
     constructor() {
-        // Verify admin status
         if (!sessionStorage.getItem('isAdmin')) {
             window.location.href = '/login.html';
             return;
         }
+
+        this.unverifiedBoards = [];
 
         this.loadAllData();
         this.setupEventListeners();
@@ -28,11 +29,9 @@ class AdminDashboard {
             });
             
             if (response.ok) {
-                console.log('response ok')
                 const users = await response.json();
                 this.displayUsers(users);
             }else{
-                console.log('async loadUsers issue')
                 const error = await response.json();
                 alert(error.error || 'error loading users')
             }
@@ -76,11 +75,9 @@ class AdminDashboard {
             });
             
             if (response.ok) {
-                console.log('response ok for unvf boards')
-                const boards = await response.json();
-                this.displayUnverifiedBoards(boards);
+                this.unverifiedBoards = await response.json();
+                this.displayUnverifiedBoards(this.unverifiedBoards);
             }else{
-                console.log('issue with loadunvfboards')
             }
         } catch (error) {
             console.error('Error loading unverified boards:', error);
@@ -88,14 +85,49 @@ class AdminDashboard {
     }
 
     displayUnverifiedBoards(boards) {
+        console.log('details of boards:', boards.map(board => ({
+            userId: boards.userId,
+            boardIndex: board.boardIndex,
+            username: board.username
+        })))
+
+
+        console.log('Received boards:', boards); // Debug log
         const boardList = document.querySelector('.board-list');
         boardList.innerHTML = boards.map(board => `
-            <div class="board-item" data-boardid="${board._id}">
+            <div class="board-item">
                 <span>User: ${board.username}</span>
-                <button class="view-board-btn">View</button>
-                <button class="verify-board-btn">Verify</button>
+                <div class="board-actions">
+                    <button class="view-board-btn" 
+                            data-userid="${board.userId.toString()}" 
+                            data-boardindex="${board.boardIndex}">View</button>
+                    <button class="verify-board-btn" 
+                            data-userid="${board.userId.toString()}" 
+                            data-boardindex="${board.boardIndex}">Verify</button>
+                </div>
             </div>
         `).join('');
+
+        console.log('board items: ', document.querySelectorAll('.board-item'));
+
+
+        boardList.querySelectorAll('.verify-board-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const userId = e.target.dataset.userid;
+                const boardIndex = e.target.dataset.boardindex;
+                console.log('Verifying board:', { userId, boardIndex }); // Debug log
+                await this.verifyBoard(userId, boardIndex);
+            });
+        });
+    
+        boardList.querySelectorAll('.view-board-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const userId = e.target.dataset.userid;
+                const boardIndex = e.target.dataset.boardindex;
+                console.log('Viewing board:', { userId, boardIndex }); // Debug log
+                this.viewBoard(userId, boardIndex);
+            });
+        });
     }
 
     async loadConditions() {
@@ -184,21 +216,57 @@ class AdminDashboard {
         }
     }
 
-    async verifyBoard(boardId) {
+    async verifyBoard(userId, boardIndex) {
+        console.log('sending ver. req', {userId, boardIndex});
         try {
-            const response = await fetch(`/admin/boards/${boardId}/verify`, {
+            const response = await fetch(`/admin/boards/${userId}/${boardIndex}/verify`, {
                 method: 'PUT',
                 headers: {
                     'sessionid': sessionStorage.getItem('sessionId')
                 }
             });
-
+    
             if (response.ok) {
-                await this.loadUnverifiedBoards(); // Refresh board list
+                // Refresh board list after verification
+                await this.loadUnverifiedBoards();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Error verifying board');
             }
         } catch (error) {
-            console.error('Error verifying board:', error);
+            console.error('Error:', error);
+            alert('Error verifying board');
         }
+    }
+
+    viewBoard(userId, boardIndex) {
+        const board = this.unverifiedBoards.find(b => 
+            b.userId === userId && b.boardIndex === boardIndex
+        ).board;
+    
+        const modal = document.getElementById('boardModal');
+        const modalBoard = document.getElementById('modalBoard');
+    
+        modalBoard.innerHTML = '';
+        
+        // Create the grid
+        board.forEach(row => {
+            row.forEach(cell => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'board-cell';
+                if (cell) {
+                    cellDiv.textContent = cell.description;
+                    if (cell.status !== undefined) {
+                        cellDiv.classList.add(cell.status ? 'true' : 'false');
+                    } else {
+                        cellDiv.classList.add('undefined');
+                    }
+                }
+                modalBoard.appendChild(cellDiv);
+            });
+        });
+    
+        modal.style.display = 'block';
     }
 
     async updateConditionStatus(description, status) {

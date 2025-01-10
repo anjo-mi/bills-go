@@ -226,29 +226,30 @@ MongoClient.connect(MongoURL)
             }
         })
 
-        app.get('/admin/unverified-boards', async(req,res) => {
-            try{
+        app.get('/admin/unverified-boards', async (req, res) => {
+            try {
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
                 });
-
+        
                 const adminUser = await db.collection('users').findOne({
                     _id: session.userID,
                     isAdmin: true
                 });
-
-                if (!session || !adminUser){
-                    return res.status(401).json({error: 'please hack away anywhere but here'});
+        
+                if (!session || !adminUser) {
+                    return res.status(401).json({ error: 'unauthorized' });
                 }
-
+        
+                // Get all users and their boards
                 const users = await db.collection('users').find().toArray();
                 const unverifiedBoards = [];
-
+        
                 users.forEach(user => {
                     user.boards.forEach((board, index) => {
-                        if (!board.isVerified){
+                        if (!board.isVerified) {
                             unverifiedBoards.push({
-                                userId: user._id,
+                                userId: user._id.toString(), // Convert ObjectId to string
                                 username: user.username,
                                 boardIndex: index,
                                 board: board
@@ -256,44 +257,57 @@ MongoClient.connect(MongoURL)
                         }
                     });
                 });
-
-                res.json(unverifiedBoards)
-            }catch(err){
-                console.error('error getting unverified boards: ', err);
-                res.status(500).json({error: 'server error'})
+        
+                res.json(unverifiedBoards);
+            } catch (error) {
+                console.error('Error getting unverified boards:', error);
+                res.status(500).json({ error: 'Server error' });
             }
         });
 
-        app.put('/admin/boards/:userId/:boardIndex/verify', async (req,res) => {
-            try{
+        app.put('/admin/boards/:userId/:boardIndex/verify', async (req, res) => {
+            try {
+                // Verify admin session
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
                 });
-
+        
                 const adminUser = await db.collection('users').findOne({
                     _id: session.userID,
                     isAdmin: true
                 });
-
-                if (!session || !adminUser){
-                    return res.status(401).json({error: 'mutumbo!'});
+        
+                if (!session || !adminUser) {
+                    return res.status(401).json({ error: 'Unauthorized' });
                 }
-
-                await db.collection('users').updateOne(
-                    {_id: new ObjectId(req.params.userId)},
-                    {
-                        $set: {
-                            [`boards.${req.params.boardIndex}.isVerified`]: true
-                        }
+        
+                // Log what we're receiving
+                console.log('Verification request for:', {
+                    userId: req.params.userId,
+                    boardIndex: req.params.boardIndex
+                });
+        
+                // Find and update the user's board
+                const result = await db.collection('users').updateOne(
+                    { _id: new ObjectId(req.params.userId) },
+                    { 
+                        $set: { 
+                            [`boards.${req.params.boardIndex}.isVerified`]: true 
+                        } 
                     }
                 );
-
-                res.json({success: true})
-            }catch(err){
-                console.error('error verifying board: ', err);
-                res.status(500).json({error: 'server error'})
+        
+                if (result.modifiedCount === 1) {
+                    res.json({ success: true });
+                } else {
+                    res.status(404).json({ error: 'Board not found' });
+                }
+        
+            } catch (error) {
+                console.error('Error verifying board:', error);
+                res.status(500).json({ error: error.message });
             }
-        })
+        });
 
         app.get('/admin/users', async (req,res) => {
             try{
@@ -361,12 +375,6 @@ MongoClient.connect(MongoURL)
                 const result = await db.collection('users').deleteOne({
                     _id: new ObjectId(req.params.userId)
                 });
-
-                if (result.deletedCount === 1){
-                    res.json({success: true});
-                }else{
-                    res.status(404).json({error: 'user not found'})
-                }
 
 
             }catch(err){
