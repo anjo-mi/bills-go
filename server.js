@@ -167,6 +167,65 @@ MongoClient.connect(MongoURL)
             }
         });
 
+        app.get('/admin/conditions', async(req,res) => {
+            try {
+                const users = await db.collection('users').find().toArray();
+                const conditionsMap = new Map();
+
+                users.forEach(user => {
+                    user.boards.forEach(board => {
+                        board.forEach(row => {
+                            row.forEach(cell => {
+                                if (cell && cell.description){
+                                    if (!conditionsMap.has(cell.description) || 
+                                        conditionsMap.get(cell.description).status === undefined){
+                                            conditionsMap.set(cell.description, {
+                                                description: cell.description,
+                                                status: cell.status
+                                            });
+                                        }
+                                }
+                            });
+                        });
+                    });
+                });
+                res.json(Array.from(conditionsMap.values()));
+            }catch(err){
+                console.error('error getting conditions: ', err);
+                res.status(500).json({error: 'server error'});
+            }
+        })
+
+        app.put('/admin/conditions', async (req,res) => {
+            try {
+                const { description, status } = req.body
+
+                const users = await db.collection('users').find().toArray()
+
+                for (const user of users){
+                    const updatedBoards = user.boards.map(board => 
+                        board.map(row => 
+                            row.map(cell => {
+                                if (cell && cell.description === description){
+                                    return {...cell, status}
+                                }
+                                return cell
+                            })
+                        )
+                    )
+                    await db.collection('users').updateOne(
+                        {_id: user._id},
+                        {$set: {boards: updatedBoards}}
+                    )
+                }
+
+                res.json({success: true})
+            }catch(err){
+                console.error('error updating conditions: ', err)
+                res.status(500).json({error: 'server error'});
+            }
+        })
+
         app.listen(process.env.port || 3000, () => console.log('the server is running'))
     })
     .catch(err => console.error('Mongo connection error: ', err))
