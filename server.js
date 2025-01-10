@@ -233,7 +233,7 @@ MongoClient.connect(MongoURL)
                 });
 
                 const adminUser = await db.collection('users').findOne({
-                    _id: session.userId,
+                    _id: session.userID,
                     isAdmin: true
                 });
 
@@ -271,7 +271,7 @@ MongoClient.connect(MongoURL)
                 });
 
                 const adminUser = await db.collection('users').findOne({
-                    _id: session.userId,
+                    _id: session.userID,
                     isAdmin: true
                 });
 
@@ -295,6 +295,42 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        app.get('/admin/users', async (req,res) => {
+            try{
+                console.log('headers for /admin/users', req.headers)
+                const session = await db.collection('sessions').findOne({
+                    _id: new ObjectId(req.headers.sessionid)
+                });
+
+                console.log('session', session)
+
+                const adminUser = await db.collection('users').findOne({
+                    _id: session.userID,
+                    isAdmin: true
+                });
+
+                console.log('admin', adminUser)
+
+                if (!session || !adminUser){
+                    return res.status(401).json({error: 'unauthorized'});
+                }
+
+                const users = await db.collection('users').find().toArray();
+
+                const userList = users.map(user => ({
+                    _id: user._id,
+                    username: user.username,
+                    isAdmin: user.isAdmin,
+                    boardCount: user.boards.length
+                }));
+
+                res.json(userList)
+            }catch(err){
+                console.error('error getting users: ', err)
+                res.status(500).json({error: 'server error'});
+            }
+        })
+
         app.delete('/admin/users/:userId', async(req,res) => {
             try{
                 const session = await db.collection('sessions').findOne({
@@ -302,7 +338,7 @@ MongoClient.connect(MongoURL)
                 });
 
                 const adminUser = await db.collection('users').findOne({
-                    _id: session.userId,
+                    _id: session.userID,
                     isAdmin: true
                 });
 

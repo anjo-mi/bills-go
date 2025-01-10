@@ -33,9 +33,12 @@ class AdminDashboard {
                 this.displayUsers(users);
             }else{
                 console.log('async loadUsers issue')
+                const error = await response.json();
+                alert(error.error || 'error loading users')
             }
         } catch (error) {
             console.error('Error loading users:', error);
+            alert('error loading users')
         }
     }
 
@@ -43,14 +46,25 @@ class AdminDashboard {
         const userList = document.querySelector('.user-list');
         userList.innerHTML = users.map(user => `
             <div class="user-item" data-userid="${user._id}">
-                <span>${user.username}</span>
-                <span>Boards: ${user.boards.length}</span>
+                <span class="username">${user.username}</span>
+                <span class="board-count">Boards: ${user.boards.length}</span>
                 ${user.isAdmin ? 
                     '<span class="admin-badge">Admin</span>' : 
                     '<button class="delete-user-btn">Delete</button>'
                 }
             </div>
         `).join('');
+
+        document.querySelectorAll('.delete-user-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const userItem = e.target.closest('.user-item');
+                const userId = userItem.dataset.userid;
+
+                if (confirm(`delete ${userItem.querySelector('.username').textContent}?`)){
+                    await this.deleteUser(userId);
+                }
+            });
+        });
     }
 
     async loadUnverifiedBoards() {
@@ -160,9 +174,13 @@ class AdminDashboard {
 
             if (response.ok) {
                 await this.loadUsers(); // Refresh user list
+            }else{
+                const error = await response.json();
+                alert(error.error || 'error deleting user')
             }
         } catch (error) {
             console.error('Error deleting user:', error);
+            alert('error deleting user')
         }
     }
 
