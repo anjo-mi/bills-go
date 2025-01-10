@@ -47,7 +47,7 @@ class AdminDashboard {
         userList.innerHTML = users.map(user => `
             <div class="user-item" data-userid="${user._id}">
                 <span class="username">${user.username}</span>
-                <span class="board-count">Boards: ${user.boards.length}</span>
+                <span class="board-count">Boards: ${user.boardCount}</span>
                 ${user.isAdmin ? 
                     '<span class="admin-badge">Admin</span>' : 
                     '<button class="delete-user-btn">Delete</button>'

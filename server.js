@@ -309,7 +309,7 @@ MongoClient.connect(MongoURL)
                     isAdmin: true
                 });
 
-                console.log('admin', adminUser)
+                console.log('admin in admin/users get', adminUser)
 
                 if (!session || !adminUser){
                     return res.status(401).json({error: 'unauthorized'});
@@ -321,7 +321,7 @@ MongoClient.connect(MongoURL)
                     _id: user._id,
                     username: user.username,
                     isAdmin: user.isAdmin,
-                    boardCount: user.boards.length
+                    boardCount: user.boards ? user.boards.length : 0
                 }));
 
                 res.json(userList)
@@ -350,15 +350,25 @@ MongoClient.connect(MongoURL)
                     _id: new ObjectId(req.params.userId)
                 });
 
+                if(!userToDelete){
+                    return res.status(404).json({error: 'user not found'});
+                }
+
                 if (userToDelete.isAdmin){
                     return res.status(403).json({error: 'cannot delete admin'});
                 }
 
-                await db.collection('users').deleteOne({
+                const result = await db.collection('users').deleteOne({
                     _id: new ObjectId(req.params.userId)
                 });
 
-                res.json({success: true})
+                if (result.deletedCount === 1){
+                    res.json({success: true});
+                }else{
+                    res.status(404).json({error: 'user not found'})
+                }
+
+
             }catch(err){
                 console.error('error deleting user: ', err);
                 res.status(500).json({error: 'server error'});
