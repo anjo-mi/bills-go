@@ -85,17 +85,14 @@ MongoClient.connect(MongoURL)
 
         app.post('/submit-board', async (req,res) => {
 
-            console.log('session ID:', req.body.sessionId)
             try{
 
                 const sessionId = new ObjectId(req.body.sessionId)
-                console.log('looking for session:', sessionId)
 
                 const session = await db.collection('sessions').findOne({
                     _id: sessionId
                 });
 
-                console.log('session found:', session)
 
                 if (!session || session.expiresAt < new Date()){
                     return res.status(401).json({error: 'log in ya bozo'})
@@ -115,9 +112,6 @@ MongoClient.connect(MongoURL)
         })
 
         app.get('/user-boards', async (req,res) => {
-            const body = req.body
-            const headers = req.headers
-            console.log({body, headers})
             try{
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
@@ -138,8 +132,9 @@ MongoClient.connect(MongoURL)
                 if (!user){
                     return res.status(404).json({error: 'user not found'})
                 }
-
-                res.json({boards: user.boards || [] })
+                const boards = user.boards || [];
+                console.log('sending boards: ', JSON.stringify(boards, null, 2));
+                res.json({boards: boards});
             }catch(err){
                 console.error('server error:', err);
                 res.status(500).json({error: 'server error'});

@@ -95,12 +95,13 @@ class BoardsDisplay {
         this.boards = [];
         this.setupEventListeners();
         this.loadUserBoards();
-        this.renderCurrentBoard();
+        // this.renderCurrentBoard();
         this.checkDeadline();
     }
 
-    async loadUserBoards(){
-        try{
+    async loadUserBoards() {
+        try {
+            console.log('Starting loadUserBoards');
             const response = await fetch('/user-boards', {
                 method: 'GET',
                 headers: {
@@ -108,19 +109,29 @@ class BoardsDisplay {
                     'username': sessionStorage.getItem('username')
                 }
             });
-
-            if (response.ok){
+    
+            console.log('Response status:', response.status);
+    
+            if (response.ok) {
                 const data = await response.json();
-                this.boards = data.boards.map(board => ({
-                    ...board,
-                    stats: BoardStatsCalculator.calculateStats(board.grid)
-                }))
-            }else {
-                window.location.href = '/login.html';
+                console.log('Received data:', data);
+                this.boards = data.boards;
+                console.log('Boards set:', this.boards);
+                if (!this.boards || !this.boards.length) {
+                    console.error('No boards data received');
+                    return; // Don't redirect, just log the error
+                }
+                this.renderCurrentBoard();
+            } else {
+                const errorData = await response.json();
+                console.error('Server error:', errorData);
+                // Instead of redirecting, alert the error
+                alert(`Error loading boards: ${errorData.error}`);
             }
-        }catch(err){
-            console.error('error loading boards:', err);
-            window.location.href = '/login.html';
+        } catch(err) {
+            console.error('Error in loadUserBoards:', err);
+            // Instead of redirecting, alert the error
+            alert(`Error: ${err.message}`);
         }
     }
 
