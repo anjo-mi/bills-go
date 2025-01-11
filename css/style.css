@@ -100,6 +100,7 @@ h2 {
     max-height: 40vh; /* Control height */
     overflow-y: auto;
     float: none; /* Remove float */
+    -webkit-overflow-scrolling: touch;;
 }
 
 .conditions-list {
