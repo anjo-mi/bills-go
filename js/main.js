@@ -188,67 +188,6 @@ class GameManager {
         // Set up board cell events
         this.initializeBoardCells();
 
-        // Set up form submission
-        this.setupFormSubmission();
-    }
-
-    setupFormSubmission() {
-        const form = document.getElementById('bingoForm');
-        
-        // Remove any existing listeners
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        
-        let isSubmitting = false; // Add flag to prevent multiple submissions
-    
-        newForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Prevent duplicate submissions
-            if (isSubmitting) return;
-            isSubmitting = true;
-                
-            if (!this.isBoardComplete()) {
-                alert('Please fill all squares before submitting');
-                isSubmitting = false;
-                return;
-            }
-    
-            try {
-                const boardData = {
-                    username: sessionStorage.getItem('username'),
-                    sessionId: sessionStorage.getItem('sessionId'),
-                    grid: this.board.map(row => 
-                        row.map(cell => cell ? {
-                            description: cell.description,
-                            status: cell.status,
-                            allowMultiple: cell.allowMultiple,
-                            maxInstances: cell.maxInstances
-                        } : null)
-                    )
-                };
-    
-                const response = await fetch('/submit-board', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(boardData)
-                });
-    
-                if (response.ok) {
-                    window.location.href = '/userBoards.html';
-                } else {
-                    const errorData = await response.json();
-                    alert(errorData.error || 'Error submitting board');
-                    isSubmitting = false;
-                }
-            } catch (error) {
-                console.error('Submit error:', error);
-                alert('Error submitting board');
-                isSubmitting = false;
-            }
-        });
     }
 
     addCondition(condition) {
@@ -666,7 +605,7 @@ class GameManager {
         submitButton.disabled = !isComplete;
     }
 
-    async handleSubmit(e){
+    handleSubmit(e){
         console.log(e.target)
         e.preventDefault();
 
@@ -679,7 +618,7 @@ class GameManager {
 
     }
 
-    async submitBoard(){
+   async submitBoard(){
         const boardData = {
             username: sessionStorage.getItem('username'),
             sessionId: sessionStorage.getItem('sessionId'),
@@ -712,7 +651,7 @@ class GameManager {
         }
         catch(err){
              console.error('error of submission: ', err)};
-    }
+    } 
 
 }
 
