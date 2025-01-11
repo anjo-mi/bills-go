@@ -47,6 +47,10 @@ h2 {
 
 .directions{
     margin: 0 auto;
+    font-size: 1.2rem;
+    text-align: center;
+    border-bottom: 1px solid black;
+    margin-bottom: .5rem;
 }
 
 /* Navigation */
@@ -172,6 +176,19 @@ h2 {
     gap: 0.8rem;
     width: min(60rem, 90vw);
     margin: 0 auto;
+}
+
+.board-modal{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);  /* Semi-transparent overlay */
+    z-index: 1000;  /* Ensure it's above other content */
+    justify-content: center;
+    align-items: center;
 }
 
 .board-cell {
@@ -302,6 +319,7 @@ h2 {
     top: 0;
     left: 0;
     width: 100%;
+    max-width: 95vw;
     height: 100%;
     background-color: rgba(0,0,0,0.8);
     z-index: 1000;
@@ -310,13 +328,60 @@ h2 {
 .modal-content {
     position: relative;
     background-color: white;
-    margin: 5vh auto;
+    margin: 0 auto;
     padding: 2rem;
     width: 90%;
     max-width: 80rem;
-    max-height: 90vh;
+    max-height: 80vh;
     overflow-y: auto;
     border-radius: 0.8rem;
+}
+
+.bingo-modal-content {
+    background-color: white;
+    width: 90%;
+    height: 80vh;
+    max-height: 80vh;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.bingo-modal-content .bingo-board {
+    flex-grow: 1;
+    margin: 0;  /* Override existing margin */
+    width: 100%;  /* Take full width of modal */
+}
+
+.bingo-modal-content .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-bingo-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 8px;
+    color: #666;
+}
+
+.close-bingo-modal:hover {
+    color: #333;
+}
+
+/* Ensure board cells maintain size in modal */
+.bingo-modal-content .board-cell {
+    min-height: min(8rem, 12vh);
+    width: auto;
 }
 
 .close-modal {

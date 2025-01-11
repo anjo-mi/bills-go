@@ -150,12 +150,15 @@ class User {
     }
 }
 
+
+
 class GameManager {
     constructor() {
         this.conditions = new Map();
         this.board = Array(5).fill(null).map(() => Array(5).fill(null));
         this.selectedItem = null;
         this.selectedItemOrigin = null;
+        this.isModalOpen = false;
         this.setupGame();
     }
 
@@ -182,42 +185,104 @@ class GameManager {
         // Initialize board cells
         this.initializeBoardCells();
 
+        // Setup modal controls
+        this.setupModalControls();
+
         // Add global click listener to handle deselection
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.condition-item') && 
-                !e.target.closest('.board-cell')) {
+                !e.target.closest('.board-cell') && 
+                !e.target.closest('#viewBoardButton') && 
+                !e.target.closest('.board-modal')) {
+
                 this.clearSelection();
             }
         });
+
+        
     }
 
-    addCondition(condition) {
-        this.conditions.set(condition.description, condition);
-        this.createConditionElement(condition);
-    }
+    setupModalControls() {
+    const modal = document.getElementById('boardModal');
+    const viewBoardBtn = document.getElementById('viewBoardButton');
+    const closeBtn = modal.querySelector('.close-bingo-modal');
 
-    createConditionElement(condition) {
-        const conditionsPool = document.getElementById('conditionsPool');
-        const conditionsList = conditionsPool.querySelector('.conditions-list') || conditionsPool;
+    // Open modal on view board click
+    viewBoardBtn.addEventListener('click', () => this.openModal());
 
-        const li = document.createElement('li');
-        li.className = 'condition-item';
-        li.dataset.condition = condition.description;
+    // Close modal on X button click
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.selectedItem && this.selectedItemOrigin !== 'pool') {
+            // Return condition to pool if it's from the board
+            const [row, col] = this.selectedItemOrigin.split(',').map(Number);
+            if (!isNaN(row) && !isNaN(col)) {
+                const condition = this.board[row][col];
+                if (condition) {
+                    condition.available++;
+                    this.updateConditionDisplay(condition);
+                    this.board[row][col] = null;
+                    this.updateCellDisplay(row, col);
+                }
+            }
+        }
+        this.clearSelection();
+        this.closeModal();
+    });
 
-        li.innerHTML = `
-            <span class="condition-text">${condition.description}</span>
-            <span class="instance-counter">${condition.available}/${condition.maxInstances}</span>
-        `;
+    // Close modal and handle condition return on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('board-modal')) {
+            if (this.selectedItem && this.selectedItemOrigin !== 'pool') {
+                // Return condition to pool if it's from the board
+                const [row, col] = this.selectedItemOrigin.split(',').map(Number);
+                if (!isNaN(row) && !isNaN(col)) {
+                    const condition = this.board[row][col];
+                    if (condition) {
+                        condition.available++;
+                        this.updateConditionDisplay(condition);
+                        this.board[row][col] = null;
+                        this.updateCellDisplay(row, col);
+                    }
+                }
+            }
+            this.clearSelection();
+            this.closeModal();
+        }
+    });
 
-        this.setupClickListeners(li);
-        conditionsList.appendChild(li);
-    }
+    // Handle Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isModalOpen) {
+            if (this.selectedItem && this.selectedItemOrigin !== 'pool') {
+                // Return condition to pool if it's from the board
+                const [row, col] = this.selectedItemOrigin.split(',').map(Number);
+                if (!isNaN(row) && !isNaN(col)) {
+                    const condition = this.board[row][col];
+                    if (condition) {
+                        condition.available++;
+                        this.updateConditionDisplay(condition);
+                        this.board[row][col] = null;
+                        this.updateCellDisplay(row, col);
+                    }
+                }
+            }
+            this.clearSelection();
+            this.closeModal();
+        }
+    });
+}
 
     setupClickListeners(element) {
-        element.addEventListener('click', (e) => this.handleItemClick(e));
+        const clickHandler = (e) => {
+            e.stopPropagation(); // Prevent event from bubbling
+            this.handleItemClick(e);
+        };
+
+        element.addEventListener('click', clickHandler);
         element.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            this.handleItemClick(e);
+            clickHandler(e);
         });
     }
 
@@ -231,78 +296,121 @@ class GameManager {
             return;
         }
 
-        // If clicking a cell with a condition or a condition from the pool
-        if (clickedElement.dataset.condition) {
+        // If clicking a condition from the pool
+        if (clickedElement.classList.contains('condition-item')) {
+            const condition = this.conditions.get(clickedElement.dataset.condition);
+            if (!condition || condition.available <= 0) return;
+
             // If clicking the already selected item, deselect it
             if (clickedElement === this.selectedItem) {
                 this.clearSelection();
                 return;
             }
 
-            // Clear previous selection
             this.clearSelection();
+            this.selectedItem = clickedElement;
+            this.selectedItemOrigin = 'pool';
+            clickedElement.classList.add('selected');
+            this.openModal();
+            return;
+        }
 
-            // Set new selection
+        // If clicking a cell with a condition
+        if (clickedElement.classList.contains('board-cell') && clickedElement.dataset.condition) {
+            // If clicking the already selected item, deselect it
+            if (clickedElement === this.selectedItem) {
+                this.clearSelection();
+                return;
+            }
+
+            this.clearSelection();
             this.selectedItem = clickedElement;
             this.selectedItemOrigin = this.getItemLocation(clickedElement);
             clickedElement.classList.add('selected');
         }
     }
 
+    initializeBoardCells() {
+        const cells = document.querySelectorAll('#modalBoard .board-cell');
+        cells.forEach(cell => {
+            // Clear existing listeners
+            const newCell = cell.cloneNode(true);
+            cell.parentNode.replaceChild(newCell, cell);
+            
+            // Add click events
+            this.setupClickListeners(newCell);
+            
+            // If cell has a condition, add it to the board array
+            if (newCell.dataset.condition) {
+                const [row, col] = [
+                    parseInt(newCell.dataset.row),
+                    parseInt(newCell.dataset.col)
+                ];
+                const condition = this.conditions.get(newCell.dataset.condition);
+                if (condition) {
+                    this.board[row][col] = condition;
+                }
+            }
+        });
+    }
+
     handlePlacement(targetCell) {
         if (!this.selectedItem || targetCell.classList.contains('center')) return;
-
+    
         const [row, col] = [
             parseInt(targetCell.dataset.row),
             parseInt(targetCell.dataset.col)
         ];
-
-        const condition = this.conditions.get(this.selectedItem.dataset.condition);
-        if (!condition) return;
-
+    
+        // If coming from pool, use the conditions Map
         if (this.selectedItemOrigin === 'pool') {
-            // Placing from pool to board
-            if (condition.available > 0) {
-                // If cell is occupied, return that condition to pool
-                if (this.board[row][col]) {
-                    const existingCondition = this.board[row][col];
-                    existingCondition.available++;
-                    this.updateConditionDisplay(existingCondition);
-                }
-                
-                // Place new condition
-                this.board[row][col] = condition;
-                condition.available--;
-                this.updateConditionDisplay(condition);
-                this.updateCellDisplay(row, col);
+            const condition = this.conditions.get(this.selectedItem.dataset.condition);
+            if (!condition || condition.available <= 0) return;
+    
+            // When placing from pool, return existing condition to pool
+            if (this.board[row][col]) {
+                const existingCondition = this.board[row][col];
+                existingCondition.available++;
+                this.updateConditionDisplay(existingCondition);
             }
+            
+            // Place new condition
+            this.board[row][col] = condition;
+            condition.available--;
+            this.updateConditionDisplay(condition);
+            this.updateCellDisplay(row, col);
         } else {
-            // Moving between board cells
+            // For board-to-board moves, work directly with board positions
             const [fromRow, fromCol] = this.selectedItemOrigin.split(',').map(Number);
             if (isNaN(fromRow) || isNaN(fromCol)) return;
+
             
-            // Swap if target cell is occupied
-            if (this.board[row][col]) {
-                const temp = this.board[row][col];
-                this.board[row][col] = this.board[fromRow][fromCol];
-                this.board[fromRow][fromCol] = temp;
-            } else {
-                // Move to empty cell
-                this.board[row][col] = this.board[fromRow][fromCol];
-                this.board[fromRow][fromCol] = null;
-            }
+            // Simple swap using board positions
+            const temp = this.board[row][col];
+            this.board[row][col] = this.board[fromRow][fromCol];
+            this.board[fromRow][fromCol] = temp;
             
             this.updateCellDisplay(row, col);
             this.updateCellDisplay(fromRow, fromCol);
-        }
 
+        }
+    
         this.clearSelection();
         this.checkBoardCompletion();
     }
 
     clearSelection() {
         if (this.selectedItem) {
-            // If the selected item was from the board, return it to the pool
+            // If the selected item was from the board AND we just did a swap,
+            // don't return it to the pool
+            if (this.selectedItemOrigin && this.selectedItemOrigin !== 'pool') {
+                this.selectedItem.classList.remove('selected');
+                this.selectedItem = null;
+                this.selectedItemOrigin = null;
+                return;  // Exit early without modifying availability
+            }
+    
+            // Original pool-return logic for other cases
             if (this.selectedItemOrigin !== 'pool') {
                 const [row, col] = this.selectedItemOrigin.split(',').map(Number);
                 if (!isNaN(row) && !isNaN(col)) {
@@ -322,47 +430,22 @@ class GameManager {
         }
     }
 
-    initializeBoardCells() {
-        const cells = document.querySelectorAll('.board-cell');
-        cells.forEach(cell => {
-            // Clear existing listeners
-            const newCell = cell.cloneNode(true);
-            cell.parentNode.replaceChild(newCell, cell);
-            
-            // Add click events
-            newCell.addEventListener('click', (e) => this.handleItemClick(e));
-            newCell.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.handleItemClick(e);
-            });
-            
-            // If cell has a condition, add it to the board array
-            if (newCell.dataset.condition) {
-                const [row, col] = [
-                    parseInt(newCell.dataset.row),
-                    parseInt(newCell.dataset.col)
-                ];
-                const condition = this.conditions.get(newCell.dataset.condition);
-                if (condition) {
-                    this.board[row][col] = condition;
-                }
-            }
-        });
+    openModal() {
+        const modal = document.getElementById('boardModal');
+        modal.style.display = 'flex';
+        this.isModalOpen = true;
     }
 
-    clearCell(row, col) {
-        const condition = this.board[row][col];
-        if (condition) {
-            condition.available++;
-            this.updateConditionDisplay(condition);
-            this.board[row][col] = null;
-            this.updateCellDisplay(row, col);
-        }
+    closeModal() {
+        const modal = document.getElementById('boardModal');
+        modal.style.display = 'none';
+        this.isModalOpen = false;
+        this.clearSelection();
     }
 
     updateCellDisplay(row, col) {
         const cell = document.querySelector(
-            `.board-cell[data-row="${row}"][data-col="${col}"]`
+            `#modalBoard .board-cell[data-row="${row}"][data-col="${col}"]`
         );
         const condition = this.board[row][col];
     
@@ -373,9 +456,9 @@ class GameManager {
                              condition.status ? 'true' : 'false');
             cell.dataset.condition = condition.description;
         } else {
-            cell.textContent = 'Click to place';
+            cell.textContent = 'Drop here';
             cell.className = 'board-cell empty';
-            cell.dataset.condition = '';
+            delete cell.dataset.condition;
         }
     }
 
@@ -386,7 +469,9 @@ class GameManager {
         
         conditionElements.forEach(element => {
             const counter = element.querySelector('.instance-counter');
-            counter.textContent = `Available: ${condition.available}`;
+            if (counter) {
+                counter.textContent = `Available: ${condition.available}`;
+            }
             
             if (condition.available <= 0) {
                 element.classList.add('disabled');
@@ -400,15 +485,10 @@ class GameManager {
         if (element.closest('.conditions-pool')) {
             return 'pool';
         }
-        const cell = element.closest('.board-cell');
-        if (cell) {
-            return `${cell.dataset.row},${cell.dataset.col}`;
+        if (element.classList.contains('board-cell')) {
+            return `${element.dataset.row},${element.dataset.col}`;
         }
         return null;
-    }
-
-    isBoardComplete() {
-        return this.board.every(row => row.every(cell => cell !== null));
     }
 
     checkBoardCompletion() {
@@ -416,46 +496,12 @@ class GameManager {
         submitButton.disabled = !this.isBoardComplete();
     }
 
-    handleSubmit(e) {
-        e.preventDefault();
-        if (!this.isBoardComplete()) {
-            alert('All squares must be filled before submitting');
-            return;
-        }
-        this.submitBoard();
-    }
-
-    async submitBoard() {
-        const boardData = {
-            username: sessionStorage.getItem('username'),
-            sessionId: sessionStorage.getItem('sessionId'),
-            grid: this.board.map(row => 
-                row.map(cell => cell ? {
-                    description: cell.description,
-                    status: cell.status,
-                    allowMultiple: cell.allowMultiple,
-                    maxInstances: cell.maxInstances
-                } : null)
+    isBoardComplete() {
+        return this.board.every((row, i) => 
+            row.every((cell, j) => 
+                (i === 2 && j === 2) || cell !== null
             )
-        };
-
-        try {
-            const response = await fetch('/submit-board', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(boardData)
-            });
-
-            if (response.ok) {
-                window.location.href = '/userBoards.html';
-            } else {
-                alert('Submission error');
-            }
-        } catch (err) {
-            console.error('Error during submission:', err);
-        }
+        );
     }
 }
 
@@ -463,5 +509,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = new GameManager();
     
     const form = document.getElementById('bingoForm');
-    form.addEventListener('submit', (e) => game.handleSubmit(e));
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!game.isBoardComplete()) {
+            alert('All squares must be filled before submitting');
+            return;
+        }
+
+        try {
+            // Transform the game board data to match the Board class format
+            const gridData = game.board.map(row => 
+                row.map(cell => {
+                    if (cell === null) return null;
+                    return {
+                        description: cell.description,
+                        status: cell.status,
+                        allowMultiple: cell.allowMultiple,
+                        maxInstances: cell.maxInstances,
+                        available: cell.available
+                    };
+                })
+            );
+
+            const response = await fetch('/submit-board', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: sessionStorage.getItem('username'),
+                    sessionId: sessionStorage.getItem('sessionId'),
+                    grid: gridData
+                })
+            });
+
+            if (response.ok) {
+                window.location.href = '/userBoards.html';
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Submission error');
+            }
+        } catch (err) {
+            console.error('Error during submission:', err);
+            alert('Error submitting board');
+        }
+    });
 });

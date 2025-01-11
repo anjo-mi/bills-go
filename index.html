@@ -7,32 +7,27 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
     <nav class="main-nav">
         <ul class="nav-list">
-            <li class="nav-item">
-                <a href="/userHome.html" class="nav-link">Profile</a>
-            </li>
-            <li class="nav-item">
-                <a href="/userBoards.html" class="nav-link">View Boards</a>
-            </li>
-            <li class="nav-item">
-                <a href="/index.html" class="nav-link">Create New Board</a>
-            </li>
-            <li class="nav-item">
-                <a href="/leaders.html" class="nav-link">Leaders</a>
-            </li>
-            <li class="nav-item">
-                <a href="/rules.html" class="nav-link">Rules</a>
-            </li>
+            <li class="nav-item"><a href="/userHome.html" class="nav-link">Profile</a></li>
+            <li class="nav-item"><a href="/userBoards.html" class="nav-link">View Boards</a></li>
+            <li class="nav-item"><a href="/index.html" class="nav-link">Create New Board</a></li>
+            <li class="nav-item"><a href="/leaders.html" class="nav-link">Leaders</a></li>
+            <li class="nav-item"><a href="/rules.html" class="nav-link">Rules</a></li>
         </ul>
     </nav>
 
     <div class="container">
         <h1>Create Your Bingo Board</h1>
-        <p class="directions">Click or touch the condition, then click or touch the square you want to put it, or click off the board to disregard the choice. All choices are from the perspective of Buffalo (ie. Lineman TD, Trick Play TD has to result in a touchdown for Buffalo)</p>
+        <p class="directions">Click or touch a condition to make the board appear. When it appears select the square in which you'd like to place the condition.</p>
+        <p class="directions">The Board will remain open until it is X'ed out of, the ESC key is pressed, or you click or touch outside of the box containing the board.</p>
+        <p class="directions">While the Board is open, you can select an item and click outside the board to remove it from the board. Or select another square to swap positions.</p>
+        <p class="directions">All choices are from the perspective of Buffalo (ie. Lineman TD, Trick Play TD has to result in a touchdown for Buffalo)</p>
         
-        <!-- Conditions Pool -->
+        <!-- View Board Button (outside the form) -->
+        <button type="button" id="viewBoardButton" class="view-board-btn">View Board</button>
+        
+        <!-- Conditions Pool (outside the form) -->
         <div id="conditionsPool" class="conditions-pool">
             <h2>Available Conditions</h2>
             <ul class="conditions-list">
@@ -207,9 +202,21 @@
             </ul>
         </div>
 
-        <!-- Form wrapping the board -->
+        <!-- Form only contains hidden input and submit button -->
         <form id="bingoForm" action="/submit-board" method="POST">
-            <div id="bingoBoard" class="bingo-board">
+            <input type="hidden" id="boardData" name="boardData" value="">
+            <button type="submit" id="submitButton" class="submit-btn" disabled>Submit Board</button>
+        </form>
+    </div>
+
+    <!-- Modal -->
+    <div id="boardModal" class="board-modal">
+        <div class="bingo-modal-content">
+            <div class="modal-header">
+                <h2>Your Bingo Board</h2>
+                <button type="button" class="close-bingo-modal">&times;</button>
+            </div>
+            <div id="modalBoard" class="bingo-board">
                 <div class="board-cell empty" data-row="0" data-col="0">Drop here</div>
                 <div class="board-cell empty" data-row="0" data-col="1">Drop here</div>
                 <div class="board-cell empty" data-row="0" data-col="2">Drop here</div>
@@ -240,12 +247,7 @@
                 <div class="board-cell empty" data-row="4" data-col="3">Drop here</div>
                 <div class="board-cell empty" data-row="4" data-col="4">Drop here</div>
             </div>
-
-            <!-- Hidden input to store board data -->
-            <input type="hidden" id="boardData" name="boardData" value="">
-            
-            <button type="submit" id="submitButton" class="submit-btn" disabled>Submit Board</button>
-        </form>
+        </div>
     </div>
 
     <script src="/js/main.js"></script>
