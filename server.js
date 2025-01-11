@@ -442,6 +442,6 @@ MongoClient.connect(MongoURL)
             }
         });
 
-        app.listen(process.env.port || 3000, () => console.log('the server is running'))
+        app.listen(process.env.PORT || 3000, () => console.log('the server is running'))
     })
     .catch(err => console.error('Mongo connection error: ', err))
