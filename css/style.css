@@ -92,11 +92,12 @@ h2 {
 
 /* Conditions Pool */
 .conditions-pool {
+    margin: 0 auto;
     margin-bottom: 2rem;
     padding: 1rem;
     border: 0.2rem solid #ccc;
     border-radius: 0.8rem;
-    width: 90%; /* Wider by default */
+    width: 95%; /* Wider by default */
     max-height: 40vh; /* Control height */
     overflow-y: auto;
     float: none; /* Remove float */
@@ -120,7 +121,8 @@ h2 {
     border: 0.1rem solid #666;
     border-radius: 0.4rem;
     background-color: #f0f0f0;
-    min-height: 6rem; /* Smaller default height */
+    height: auto;
+    min-height: 3rem; /* Smaller default height */
     transition: all 0.3s ease;
     cursor: pointer;
     user-select: none;
