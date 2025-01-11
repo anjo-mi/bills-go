@@ -176,6 +176,7 @@ h2 {
     aspect-ratio: 1;
     border: 0.2rem solid #333;
     padding: 1rem;
+    width: max(6rem,  10vw);
     text-align: center;
     display: flex;
     align-items: center;
