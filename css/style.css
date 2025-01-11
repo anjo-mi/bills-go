@@ -109,7 +109,7 @@ h2 {
     margin: 0;
     display: grid; /* Change to grid for better control */
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); /* Responsive columns */
-    gap: 0.8rem;
+    gap: 2rem;
 }
 
 .condition-item {
