@@ -25,10 +25,40 @@ class LeaderboardManager {
         });
     }
 
-    loadBoards() {
-        // This would normally fetch from server - using test data for now
-        this.boards = this.generateTestBoards();
-        this.displayBoards();
+    async loadBoards() {
+        try{
+            const response = await fetch('/all-boards', {
+                method: 'GET'
+            })
+
+            if (response.ok){
+                const data = await response.json();
+                console.log(data)
+                this.boards = data;
+
+
+                if (!this.boards || !this.boards.length){
+                    console.error('no boards to display');
+                    return;
+                }
+                this.boards = this.boards.map(board => {
+                    console.log(board, board.grid)
+                    board.stats = BoardStatsCalculator.calculateStats(board);
+                    return board;
+                })
+                this.sortBoards(this.boards);
+                this.displayBoards();
+            }else {
+                const errorData = response.json();
+                console.error('server error: ', errorData);
+
+            }
+        }catch(err) {
+            console.error('Error in loadUserBoards:', err);
+            // Instead of redirecting, alert the error
+            alert(`Error: ${err.message}`);
+        }
+
     }
 
     sortBoards(boards) {
@@ -144,94 +174,6 @@ class LeaderboardManager {
         document.getElementById('boardModal').style.display = 'none';
     }
 
-    generateTestBoards() {
-        const conditions = [
-            { description: "Josh Allen TD Pass", status: true },
-            { description: "Bills Score First", status: true },
-            { description: "Defensive Turnover", status: true },
-            { description: "Stefon Diggs TD", status: true },
-            { description: "50+ Yard Play", status: true },
-            { description: "4th Down Stop", status: false },
-            { description: "Missed FG", status: false },
-            { description: "Punt Return TD", status: undefined },
-            { description: "Safety", status: undefined },
-            { description: "Trick Play", status: undefined }
-        ];
-
-        const createGrid = (winningLine = false) => {
-            const grid = Array(5).fill(null).map(() => Array(5).fill(null));
-            
-            // Add center FREE SPACE
-            grid[2][2] = { description: "FREE SPACE", status: true };
-
-            // If winningLine is true, make first row all true
-            if (winningLine) {
-                for (let j = 0; j < 5; j++) {
-                    grid[0][j] = { description: `Condition ${j+1}`, status: true };
-                }
-            }
-
-            // Fill rest of grid with a mix of statuses
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    if (grid[i][j]) continue; // Skip if already filled
-                    
-                    // Ensure some true conditions (about 30% chance)
-                    const randomStatus = Math.random();
-                    let status;
-                    if (randomStatus < 0.3) {
-                        status = true;
-                    } else if (randomStatus < 0.6) {
-                        status = false;
-                    } else {
-                        status = undefined;
-                    }
-                    
-                    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-                    grid[i][j] = { 
-                        description: randomCondition.description, 
-                        status: status 
-                    };
-                }
-            }
-            return grid;
-        };
-
-        // Create test boards with calculated stats
-        const boards = [
-            {
-                username: "BillsMafia1",
-                boardNumber: 1,
-                grid: createGrid(true)  // This one will have a winning line
-            },
-            {
-                username: "BillsMafia2",
-                boardNumber: 1,
-                grid: createGrid(true)  // This one will have a winning line
-            },
-            {
-                username: "BillsFan1",
-                boardNumber: 1,
-                grid: createGrid(false)
-            },
-            {
-                username: "BillsFan2",
-                boardNumber: 1,
-                grid: createGrid(false)
-            },
-            {
-                username: "BillsFan3",
-                boardNumber: 2,
-                grid: createGrid(false)
-            }
-        ];
-
-        // Calculate stats for each board
-        return boards.map(board => ({
-            ...board,
-            stats: BoardStatsCalculator.calculateStats(board.grid)
-        }));
-    }
 }
 
 

@@ -112,6 +112,22 @@ MongoClient.connect(MongoURL)
             }
         })
 
+        app.get('/all-boards', async (req,res) => {
+            try{
+                const allBoards = [];
+                const users = await db.collection('users').find().toArray();
+                users.forEach(user => {
+                    user.boards.forEach(board => {
+                        allBoards.push(board);
+                    });
+                });
+                res.json(allBoards);
+            }catch(err){
+                console.error('error getting all boards: ', err);
+                res.status(500).json({error: 'server error'});
+            }
+        });
+
         app.get('/user-boards', async (req,res) => {
             try{
                 const session = await db.collection('sessions').findOne({
