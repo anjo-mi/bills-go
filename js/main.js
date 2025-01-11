@@ -666,7 +666,8 @@ class GameManager {
         submitButton.disabled = !isComplete;
     }
 
-    handleSubmit(e){
+    async handleSubmit(e){
+        console.log(e.target)
         e.preventDefault();
 
         if (!this.isBoardComplete()){
@@ -674,6 +675,11 @@ class GameManager {
             return
         }
 
+        this.submitBoard();
+
+    }
+
+    async submitBoard(){
         const boardData = {
             username: sessionStorage.getItem('username'),
             sessionId: sessionStorage.getItem('sessionId'),
@@ -686,22 +692,26 @@ class GameManager {
                 } : null)
             )
         };
-
-        fetch('/submit-board', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(boardData)
-        })
-        .then(response => {
-            if (response.ok){
-                window.location.href = '/userBoards.html'
-            }else{
-                alert('submission error')
+        try{
+            const response = await fetch('/submit-board', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(boardData)
+            })
+            if (response.ok) {
+                if (response.ok){
+                    alert(response)
+                    alert('submission worked')
+                    window.location.href = '/userBoards.html'
+                }else{
+                    alert('submission error')
+                }
             }
-        })
-        .catch(err => console.error('error of submission: ', err))
+        }
+        catch(err){
+             console.error('error of submission: ', err)};
     }
 
 }

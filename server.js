@@ -139,7 +139,6 @@ MongoClient.connect(MongoURL)
                     _id: new ObjectId(req.headers.sessionid)
                 });
 
-                console.log({session})
 
                 if (!session || session.expiresAt < new Date()){
                     return res.status(401).json({error: 'session expired'});
@@ -149,13 +148,13 @@ MongoClient.connect(MongoURL)
                     username: req.headers.username
                 })
 
-                console.log({user})
+               
 
                 if (!user){
                     return res.status(404).json({error: 'user not found'})
                 }
                 const boards = user.boards || [];
-                console.log('sending boards: ', JSON.stringify(boards, null, 2));
+                
                 res.json({boards: boards});
             }catch(err){
                 console.error('server error:', err);
@@ -352,19 +351,16 @@ MongoClient.connect(MongoURL)
 
         app.get('/admin/users', async (req,res) => {
             try{
-                console.log('headers for /admin/users', req.headers)
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
                 });
 
-                console.log('session', session)
 
                 const adminUser = await db.collection('users').findOne({
                     _id: session.userID,
                     isAdmin: true
                 });
 
-                console.log('admin in admin/users get', adminUser)
 
                 if (!session || !adminUser){
                     return res.status(401).json({error: 'unauthorized'});
@@ -388,18 +384,15 @@ MongoClient.connect(MongoURL)
 
         app.delete('/admin/users/:userId', async(req,res) => {
             try {
-                console.log('Delete request received for userId:', req.params.userId);
                 
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
                 });
-                console.log('Session found:', session);
         
                 const adminUser = await db.collection('users').findOne({
                     _id: session.userID,
                     isAdmin: true
                 });
-                console.log('Admin user found:', adminUser);
         
                 if (!session || !adminUser) {
                     return res.status(401).json({error: 'do your hacking elsewhere please'});
@@ -408,7 +401,6 @@ MongoClient.connect(MongoURL)
                 const userToDelete = await db.collection('users').findOne({
                     _id: new ObjectId(req.params.userId)
                 });
-                console.log('User to delete:', userToDelete);
         
                 if (!userToDelete) {
                     return res.status(404).json({error: 'user not found'});
