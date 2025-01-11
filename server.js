@@ -224,28 +224,46 @@ MongoClient.connect(MongoURL)
         app.put('/admin/conditions', async (req,res) => {
             try {
                 const { description, status } = req.body
-
+        
                 const users = await db.collection('users').find().toArray()
-
-                for (const user of users){
-                    const updatedBoards = user.boards.map(board => 
-                        board.map(row => 
-                            row.map(cell => {
-                                if (cell && cell.description === description){
-                                    return {...cell, status}
-                                }
-                                return cell
-                            })
-                        )
-                    )
+                for (const user of users) {
+                    console.log('user board: ', user.boards)
+                    const updatedBoards = user.boards.map(board => {
+                        // If board is an array, it's unverified - map directly
+                        if (Array.isArray(board)) {
+                            return board.map(row => 
+                                row.map(cell => {
+                                    if (cell && cell.description === description) {
+                                        return {...cell, status}
+                                    }
+                                    return cell
+                                })
+                            )
+                        } 
+                        // If board is an object with grid property, it's verified - map the grid
+                        else {
+                            return {
+                                ...board,
+                                grid: board.grid.map(row =>
+                                    row.map(cell => {
+                                        if (cell && cell.description === description) {
+                                            return {...cell, status}
+                                        }
+                                        return cell
+                                    })
+                                )
+                            }
+                        }
+                    })
+                    
                     await db.collection('users').updateOne(
                         {_id: user._id},
                         {$set: {boards: updatedBoards}}
                     )
                 }
-
+        
                 res.json({success: true})
-            }catch(err){
+            } catch(err) {
                 console.error('error updating conditions: ', err)
                 res.status(500).json({error: 'server error'});
             }
