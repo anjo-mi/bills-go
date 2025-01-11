@@ -194,33 +194,60 @@ class GameManager {
 
     setupFormSubmission() {
         const form = document.getElementById('bingoForm');
-        form.addEventListener('submit', (e) => {
+        
+        // Remove any existing listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        
+        let isSubmitting = false; // Add flag to prevent multiple submissions
+    
+        newForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Only proceed if the board is complete
+            // Prevent duplicate submissions
+            if (isSubmitting) return;
+            isSubmitting = true;
+                
             if (!this.isBoardComplete()) {
                 alert('Please fill all squares before submitting');
+                isSubmitting = false;
                 return;
             }
-
-            // Prepare board data for submission
-            const boardData = {
-                grid: this.board.map(row => 
-                    row.map(cell => cell ? {
-                        description: cell.description,
-                        status: cell.status,
-                        allowMultiple: cell.allowMultiple,
-                        maxInstances: cell.maxInstances
-                    } : null)
-                )
-            };
-
-            // Update hidden input
-            const boardDataInput = document.getElementById('boardData');
-            boardDataInput.value = JSON.stringify(boardData);
-
-            // Submit the form
-            form.submit();
+    
+            try {
+                const boardData = {
+                    username: sessionStorage.getItem('username'),
+                    sessionId: sessionStorage.getItem('sessionId'),
+                    grid: this.board.map(row => 
+                        row.map(cell => cell ? {
+                            description: cell.description,
+                            status: cell.status,
+                            allowMultiple: cell.allowMultiple,
+                            maxInstances: cell.maxInstances
+                        } : null)
+                    )
+                };
+    
+                const response = await fetch('/submit-board', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(boardData)
+                });
+    
+                if (response.ok) {
+                    window.location.href = '/userBoards.html';
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.error || 'Error submitting board');
+                    isSubmitting = false;
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('Error submitting board');
+                isSubmitting = false;
+            }
         });
     }
 
@@ -374,9 +401,25 @@ class GameManager {
     }
     
     handleDragStart(e) {
+        if (this.dragHelper) {
+            this.dragHelper.remove();
+        }
+        
         this.draggedItem = e.target;
         this.draggedItemOrigin = this.getItemLocation(e.target);
         e.target.classList.add('dragging');
+        
+        // Create visual helper for mouse drag
+        const clone = e.target.cloneNode(true);
+        clone.id = 'dragHelper';
+        clone.style.position = 'fixed';
+        clone.style.top = `${e.clientY - 25}px`;
+        clone.style.left = `${e.clientX - 25}px`;
+        clone.style.opacity = '0.8';
+        clone.style.pointerEvents = 'none';
+        clone.style.zIndex = '1000';
+        document.body.appendChild(clone);
+        this.dragHelper = clone;
         
         const data = {
             condition: e.target.dataset.condition,
@@ -386,36 +429,33 @@ class GameManager {
     }
 
     handleDragEnd(e) {
-        e.target.classList.remove('dragging');
-        document.querySelectorAll('.board-cell').forEach(cell => 
-            cell.classList.remove('drag-over'));
-
-        // Check if the drag ended outside any valid drop targets
-        if (this.draggedItemOrigin !== 'pool') {
-            const [row, col] = this.draggedItemOrigin.split(',').map(Number);
-            // Only process if it's actually from a board cell
-            if (!isNaN(row) && !isNaN(col)) {
-                const condition = this.board[row][col];
-                if (condition) {
-                    // Return to pool if dropped outside
-                    if (e.dataTransfer.dropEffect === 'none') {
-                        condition.available++;
-                        this.updateConditionDisplay(condition);
-                        this.board[row][col] = null;
-                        this.updateCellDisplay(row, col);
-                    }
-                }
-            }
+        if (this.dragHelper) {
+            this.dragHelper.remove();
+            this.dragHelper = null;
         }
+        
+        if (this.draggedItem) {
+            this.draggedItem.classList.remove('dragging');
+            this.draggedItem = null;
+        }
+        
+        document.querySelectorAll('.board-cell').forEach(cell => {
+            cell.classList.remove('drag-over');
+            if (cell.classList.contains('empty')) {
+                cell.textContent = 'Drop here';
+            }
+        });
     }
 
     handleDragOver(e) {
-        // This preventDefault is CRUCIAL for allowing drops
         e.preventDefault();
-        
         const cell = e.target.closest('.board-cell');
         if (cell && !cell.classList.contains('center')) {
             cell.classList.add('drag-over');
+            // Ensure "Drop here" text is visible in empty cells
+            if (cell.classList.contains('empty')) {
+                cell.textContent = 'Drop here';
+            }
         }
     }
 
@@ -438,9 +478,10 @@ class GameManager {
         this.touchStartX = touch.clientX;
         this.touchStartY = touch.clientY;
         
-        touchedElement.classList.add('dragging');
-        
-        // Create visual drag helper
+        // Create drag helper
+        if (this.dragHelper) {
+            this.dragHelper.remove();
+        }
         const clone = touchedElement.cloneNode(true);
         clone.id = 'dragHelper';
         clone.style.position = 'fixed';
@@ -450,58 +491,62 @@ class GameManager {
         clone.style.pointerEvents = 'none';
         clone.style.zIndex = '1000';
         document.body.appendChild(clone);
+        this.dragHelper = clone;
+    
+        touchedElement.classList.add('dragging');
+    
+        // Reset empty cells text
+        document.querySelectorAll('.board-cell.empty').forEach(cell => {
+            cell.textContent = 'Drop here';
+        });
     }
-
+    
     handleTouchMove(e) {
         if (!this.draggedItem) return;
         e.preventDefault();
-
+    
         const touch = e.touches[0];
-        const helper = document.getElementById('dragHelper');
-        if (helper) {
-            helper.style.top = `${touch.clientY - 25}px`;
-            helper.style.left = `${touch.clientX - 25}px`;
+        if (this.dragHelper) {
+            this.dragHelper.style.top = `${touch.clientY - 25}px`;
+            this.dragHelper.style.left = `${touch.clientX - 25}px`;
         }
-
+    
         // Remove drag-over from all cells
         document.querySelectorAll('.board-cell').forEach(c => 
             c.classList.remove('drag-over'));
-
-        // Find the element under the touch point
+    
+        // Find the cell under the touch point
         const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
         const cell = elementAtPoint?.closest('.board-cell');
         
         // Add drag-over if we're over a valid cell
         if (cell && !cell.classList.contains('center')) {
             cell.classList.add('drag-over');
-        }
-
-        // Check if we're outside the board and conditions area
-        const isOverValidDropZone = elementAtPoint?.closest('.bingo-board') || 
-                                  elementAtPoint?.closest('.conditions-pool');
-        if (!isOverValidDropZone && helper) {
-            helper.style.opacity = '0.3'; // Visual feedback that this will remove the condition
-        } else if (helper) {
-            helper.style.opacity = '0.8';
+            // Keep "Drop here" text visible
+            if (cell.classList.contains('empty')) {
+                cell.textContent = 'Drop here';
+            }
         }
     }
-
+    
     handleTouchEnd(e) {
         if (!this.draggedItem) return;
         e.preventDefault();
-
-        const helper = document.getElementById('dragHelper');
-        if (helper) helper.remove();
-
+    
+        // Remove drag helper
+        if (this.dragHelper) {
+            this.dragHelper.remove();
+            this.dragHelper = null;
+        }
+    
         const touch = e.changedTouches[0];
         const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
         const cell = elementAtPoint?.closest('.board-cell');
-
+    
         this.draggedItem.classList.remove('dragging');
-
-        // Check if we're dropping on a valid cell
+    
         if (cell) {
-            this.handleDrop({ 
+            this.handleDrop({
                 preventDefault: () => {},
                 target: cell,
                 dataTransfer: {
@@ -511,27 +556,36 @@ class GameManager {
                     })
                 }
             });
-        } 
-        // If not dropping on a cell, check if we're returning to pool
-        else if (this.draggedItemOrigin !== 'pool') {
-            // Return condition to pool
+        } else if (this.draggedItemOrigin !== 'pool') {
+            // Return condition to pool if dropped outside
             const [row, col] = this.draggedItemOrigin.split(',').map(Number);
             if (!isNaN(row) && !isNaN(col)) {
                 const condition = this.board[row][col];
                 if (condition) {
-                    condition.available++; // Return to pool
+                    condition.available++;
                     this.updateConditionDisplay(condition);
                     this.board[row][col] = null;
                     this.updateCellDisplay(row, col);
                 }
             }
         }
-
-        // Cleanup
+    
         this.draggedItem = null;
         this.draggedItemOrigin = null;
         document.querySelectorAll('.board-cell').forEach(cell => 
             cell.classList.remove('drag-over'));
+    }
+
+    cleanup() {
+        if (this.dragHelper) {
+            this.dragHelper.remove();
+            this.dragHelper = null;
+        }
+        if (this.draggedItem) {
+            this.draggedItem.style.opacity = '1';
+            this.draggedItem.classList.remove('dragging');
+            this.draggedItem = null;
+        }
     }
 
     placeConditionOnBoard(condition, row, col) {

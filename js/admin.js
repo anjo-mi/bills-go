@@ -43,26 +43,33 @@ class AdminDashboard {
 
     displayUsers(users) {
         const userList = document.querySelector('.user-list');
-        userList.innerHTML = users.map(user => `
+        
+        // Remove any existing event listeners
+        const oldList = userList.cloneNode(false);
+        userList.parentNode.replaceChild(oldList, userList);
+        
+        oldList.innerHTML = users.map(user => `
             <div class="user-item" data-userid="${user._id}">
                 <span class="username">${user.username}</span>
                 <span class="board-count">Boards: ${user.boardCount}</span>
                 ${user.isAdmin ? 
                     '<span class="admin-badge">Admin</span>' : 
-                    '<button class="delete-user-btn">Delete</button>'
+                    `<button class="delete-user-btn">Delete User</button>`
                 }
             </div>
         `).join('');
-
-        document.querySelectorAll('.delete-user-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+    
+        // Use single event listener with event delegation
+        oldList.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-user-btn')) {
                 const userItem = e.target.closest('.user-item');
                 const userId = userItem.dataset.userid;
-
-                if (confirm(`delete ${userItem.querySelector('.username').textContent}?`)){
+                console.log('Delete click - single event fired for userId:', userId);
+                
+                if (confirm('Are you sure you want to delete this user?')) {
                     await this.deleteUser(userId);
                 }
-            });
+            }
         });
     }
 
@@ -181,22 +188,26 @@ class AdminDashboard {
 
     async deleteUser(userId) {
         try {
+            console.log('Starting delete request for userId:', userId);
             const response = await fetch(`/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'sessionid': sessionStorage.getItem('sessionId')
                 }
             });
-
+    
+            const data = await response.json();
+            console.log('Delete response:', { status: response.status, data });
+    
             if (response.ok) {
-                await this.loadUsers(); // Refresh user list
-            }else{
-                const error = await response.json();
-                alert(error.error || 'error deleting user')
+                // Only refresh if delete was successful
+                await this.loadUsers();
+            } else {
+                alert(data.error || 'Error deleting user');
             }
         } catch (error) {
             console.error('Error deleting user:', error);
-            alert('error deleting user')
+            alert('Error deleting user');
         }
     }
 

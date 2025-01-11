@@ -154,11 +154,31 @@ h2 {
 .board-cell.empty {
     background-color: white;
     border: 0.2rem dashed #666;
+    /* display: flex !important;
+    align-items: center;
+    justify-content: center; */
 }
 
 .board-cell.drag-over {
     border: 0.2rem dashed #000;
     background-color: #f0f0f0;
+}
+
+.board-cell.dragging {
+    opacity: 0 !important;
+}
+
+.dragging{
+    opacity: 1 !important;
+}
+
+#dragHelper {
+    pointer-events: none !important;
+    touch-action: none !important;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    visibility: visible !important;
+    display: block !important;
 }
 
 /* Stats container (for display page) */

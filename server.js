@@ -387,38 +387,44 @@ MongoClient.connect(MongoURL)
         })
 
         app.delete('/admin/users/:userId', async(req,res) => {
-            try{
+            try {
+                console.log('Delete request received for userId:', req.params.userId);
+                
                 const session = await db.collection('sessions').findOne({
                     _id: new ObjectId(req.headers.sessionid)
                 });
-
+                console.log('Session found:', session);
+        
                 const adminUser = await db.collection('users').findOne({
                     _id: session.userID,
                     isAdmin: true
                 });
-
-                if (!session || !adminUser){
+                console.log('Admin user found:', adminUser);
+        
+                if (!session || !adminUser) {
                     return res.status(401).json({error: 'do your hacking elsewhere please'});
                 }
-
+        
                 const userToDelete = await db.collection('users').findOne({
                     _id: new ObjectId(req.params.userId)
                 });
-
-                if(!userToDelete){
+                console.log('User to delete:', userToDelete);
+        
+                if (!userToDelete) {
                     return res.status(404).json({error: 'user not found'});
                 }
-
-                if (userToDelete.isAdmin){
+        
+                if (userToDelete.isAdmin) {
                     return res.status(403).json({error: 'cannot delete admin'});
                 }
-
+        
                 const result = await db.collection('users').deleteOne({
                     _id: new ObjectId(req.params.userId)
                 });
-
-
-            }catch(err){
+                
+                res.json({ success: true }); // Add this line - we were missing a response for success case
+        
+            } catch(err) {
                 console.error('error deleting user: ', err);
                 res.status(500).json({error: 'server error'});
             }
