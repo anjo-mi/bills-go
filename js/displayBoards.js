@@ -95,7 +95,6 @@ class BoardsDisplay {
         this.boards = [];
         this.setupEventListeners();
         this.loadUserBoards();
-        // this.renderCurrentBoard();
         this.checkDeadline();
     }
 
@@ -167,9 +166,8 @@ class BoardsDisplay {
         boardElement.innerHTML = '';
     
         // Handle both verified and unverified board formats
-        const board = currentBoard.grid || currentBoard; // If it's a verified board, use grid property, otherwise use board directly
-        const isVerified = currentBoard.hasOwnProperty('isVerified');
-    
+        const board = Array.isArray(currentBoard) ? currentBoard : currentBoard.grid;
+        
         board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellDiv = document.createElement('div');
@@ -183,13 +181,9 @@ class BoardsDisplay {
                         cellDiv.classList.add('center');
                     }
     
-                    // Handle verification status
-                    if (isVerified) {
-                        if (cell.status !== undefined) {
-                            cellDiv.classList.add(cell.status ? 'true' : 'false');
-                        } else {
-                            cellDiv.classList.add('undefined');
-                        }
+                    // Handle cell status regardless of verification status
+                    if (cell.status !== undefined) {
+                        cellDiv.classList.add(cell.status ? 'true' : 'false');
                     } else {
                         cellDiv.classList.add('undefined');
                     }
@@ -202,7 +196,7 @@ class BoardsDisplay {
         totalBoards.textContent = this.boards.length;
     
         // Calculate stats using the correct board data
-        const stats = BoardStatsCalculator.calculateStats(board);
+        const stats = BoardStatsCalculator.calculateStats(currentBoard); // Use currentBoard instead of board
         this.updateStats(stats);
     }
 
