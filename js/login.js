@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/index.html';
                 }
             } else {
-                alert('Invalid username or password');
+                alert('Invalid username or password, or if new, try signing up');
             }
         } catch (error) {
             console.error('Login error:', error);

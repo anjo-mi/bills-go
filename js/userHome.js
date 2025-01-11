@@ -141,7 +141,6 @@ class UserHomeManager {
             } else {
                 const errorData = await response.json();
                 console.error('Server error:', errorData);
-                alert(`Error loading boards: ${errorData.error}`);
             }
         } catch(err) {
             console.error('Error in loadUserBoards:', err);

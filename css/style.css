@@ -45,6 +45,10 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
+.directions{
+    margin: 0 auto;
+}
+
 /* Navigation */
 .main-nav {
     background-color: #4CAF50;
@@ -531,6 +535,112 @@ h2 {
     .modal-content {
         margin: 2vh auto;
         padding: 1.5rem;
+    }
+}
+
+/* Rules and Login Jingle */
+
+.jingle {
+    margin-top: 2rem;
+    text-align: center;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    animation: float 3s ease-in-out infinite;
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.jingle p {
+    margin: 0.8rem 0;
+    font-size: 1.6rem;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    transform-origin: center;
+    animation: bounce 0.5s ease-in-out infinite alternate;
+}
+
+.jingle p:nth-child(odd) {
+    animation-delay: 0.2s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes bounce {
+    from { transform: scale(1); }
+    to { transform: scale(1.03); }
+}
+
+/* Rules Styling */
+.rules-heading {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin: 2rem 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.rules-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rules-list {
+    list-style: none;
+    padding: 0;
+}
+
+.rules-item {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-left: 4px solid #3498db;
+    border-radius: 0 5px 5px 0;
+}
+
+.rules-item p {
+    margin: 0;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+.tiebreaker-list {
+    list-style: disc;
+    margin-left: 2rem;
+    margin-top: 1rem;
+}
+
+.tiebreaker-rule {
+    margin: 0.5rem 0;
+    color: #34495e;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rules-section {
+        padding: 1rem;
+        margin: 0 1rem;
+    }
+
+    .rules-heading {
+        font-size: 2rem;
+    }
+
+    .jingle {
+        margin: 2rem 1rem;
+    }
+
+    .jingle p {
+        font-size: 1.4rem;
     }
 }
 

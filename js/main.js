@@ -449,7 +449,6 @@ class GameManager {
             });
 
             if (response.ok) {
-                alert('Submission successful');
                 window.location.href = '/userBoards.html';
             } else {
                 alert('Submission error');

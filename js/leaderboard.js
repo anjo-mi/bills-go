@@ -32,7 +32,6 @@ class LeaderboardManager {
             });
             if (response.ok) {
                 const data = await response.json();
-                console.log('Received boards:', data);
                 
                 // Only use verified boards
                 const verifiedBoards = data.filter(board => board.isVerified);

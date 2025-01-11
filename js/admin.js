@@ -64,7 +64,6 @@ class AdminDashboard {
             if (e.target.classList.contains('delete-user-btn')) {
                 const userItem = e.target.closest('.user-item');
                 const userId = userItem.dataset.userid;
-                console.log('Delete click - single event fired for userId:', userId);
                 
                 if (confirm('Are you sure you want to delete this user?')) {
                     await this.deleteUser(userId);
@@ -92,7 +91,6 @@ class AdminDashboard {
     }
 
     displayUnverifiedBoards(boards) {
-        console.log('Detailed boards data:', boards);
         const boardList = document.querySelector('.board-list');
         boardList.innerHTML = boards.map(board => `
             <div class="board-item">
@@ -111,7 +109,6 @@ class AdminDashboard {
                 e.stopPropagation();
                 const userId = button.getAttribute('data-userid');
                 const boardIndex = button.getAttribute('data-boardindex');
-                console.log('Verify click - userId:', userId, 'boardIndex:', boardIndex);
                 if (userId && boardIndex) {
                     await this.verifyBoard(userId, boardIndex);
                 } else {
@@ -188,7 +185,6 @@ class AdminDashboard {
 
     async deleteUser(userId) {
         try {
-            console.log('Starting delete request for userId:', userId);
             const response = await fetch(`/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: {
@@ -197,7 +193,6 @@ class AdminDashboard {
             });
     
             const data = await response.json();
-            console.log('Delete response:', { status: response.status, data });
     
             if (response.ok) {
                 // Only refresh if delete was successful
@@ -218,7 +213,6 @@ class AdminDashboard {
         }
     
         try {
-            console.log(`Attempting to verify board - userId: ${userId}, boardIndex: ${boardIndex}`);
             const response = await fetch(`/admin/boards/${userId}/${boardIndex}/verify`, {
                 method: 'PUT',
                 headers: {
