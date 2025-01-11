@@ -26,39 +26,37 @@ class LeaderboardManager {
     }
 
     async loadBoards() {
-        try{
+        try {
             const response = await fetch('/all-boards', {
                 method: 'GET'
-            })
-
-            if (response.ok){
+            });
+            if (response.ok) {
                 const data = await response.json();
-                console.log(data)
-                this.boards = data;
-
-
-                if (!this.boards || !this.boards.length){
-                    console.error('no boards to display');
+                console.log('Received boards:', data);
+                
+                // Only use verified boards
+                const verifiedBoards = data.filter(board => board.isVerified);
+                
+                this.boards = verifiedBoards.map(board => ({
+                    ...board,
+                    stats: BoardStatsCalculator.calculateStats(board.grid)
+                }));
+    
+                if (!this.boards.length) {
+                    console.error('no verified boards to display');
                     return;
                 }
-                this.boards = this.boards.map(board => {
-                    console.log(board, board.grid)
-                    board.stats = BoardStatsCalculator.calculateStats(board);
-                    return board;
-                })
-                this.sortBoards(this.boards);
+    
+                this.boards = this.sortBoards(this.boards);
                 this.displayBoards();
-            }else {
-                const errorData = response.json();
+            } else {
+                const errorData = await response.json();
                 console.error('server error: ', errorData);
-
             }
-        }catch(err) {
-            console.error('Error in loadUserBoards:', err);
-            // Instead of redirecting, alert the error
+        } catch(err) {
+            console.error('Error loading boards:', err);
             alert(`Error: ${err.message}`);
         }
-
     }
 
     sortBoards(boards) {
@@ -141,18 +139,16 @@ class LeaderboardManager {
         const modal = document.getElementById('boardModal');
         const modalUsername = document.getElementById('modalUsername');
         const modalBoard = document.getElementById('modalBoard');
-
-        // Update modal content
-        modalUsername.textContent = `${board.username}'s Board`;
+    
+        modalUsername.textContent = `${board.username}'s Board ${board.boardNumber}`;
         document.getElementById('modalCompletedLines').textContent = board.stats.completedLines;
         document.getElementById('modalMaxTrue').textContent = board.stats.maxTrueConditions;
         document.getElementById('modalLinesWithMax').textContent = board.stats.linesWithMaxTrue;
         document.getElementById('modalTotalTrue').textContent = board.stats.totalTrueConditions;
-
-        // Clear and populate board
+    
         modalBoard.innerHTML = '';
-        board.grid.forEach((row, rowIndex) => {
-            row.forEach((cell, colIndex) => {
+        board.grid.forEach(row => {
+            row.forEach(cell => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'board-cell';
                 if (cell) {
@@ -166,7 +162,7 @@ class LeaderboardManager {
                 modalBoard.appendChild(cellDiv);
             });
         });
-
+    
         modal.style.display = 'block';
     }
 

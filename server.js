@@ -113,16 +113,21 @@ MongoClient.connect(MongoURL)
         })
 
         app.get('/all-boards', async (req,res) => {
-            try{
+            try {
                 const allBoards = [];
                 const users = await db.collection('users').find().toArray();
                 users.forEach(user => {
-                    user.boards.forEach(board => {
-                        allBoards.push(board);
+                    user.boards.forEach((board, index) => {
+                        allBoards.push({
+                            username: user.username,
+                            boardNumber: index + 1,
+                            grid: Array.isArray(board) ? board : board.grid,
+                            isVerified: board.isVerified || false
+                        });
                     });
                 });
                 res.json(allBoards);
-            }catch(err){
+            } catch(err) {
                 console.error('error getting all boards: ', err);
                 res.status(500).json({error: 'server error'});
             }
@@ -183,34 +188,39 @@ MongoClient.connect(MongoURL)
             }
         });
 
-        app.get('/admin/conditions', async(req,res) => {
+        app.get('/admin/conditions', async (req, res) => {
             try {
                 const users = await db.collection('users').find().toArray();
                 const conditionsMap = new Map();
-
+        
                 users.forEach(user => {
                     user.boards.forEach(board => {
-                        board.forEach(row => {
-                            row.forEach(cell => {
-                                if (cell && cell.description){
-                                    if (!conditionsMap.has(cell.description) || 
-                                        conditionsMap.get(cell.description).status === undefined){
+                        // Check if board is an object with a grid property
+                        const grid = Array.isArray(board) ? board : board.grid;
+                        if (Array.isArray(grid)) {
+                            grid.forEach(row => {
+                                row.forEach(cell => {
+                                    if (cell && cell.description) {
+                                        if (!conditionsMap.has(cell.description) || 
+                                            conditionsMap.get(cell.description).status === undefined) {
                                             conditionsMap.set(cell.description, {
                                                 description: cell.description,
                                                 status: cell.status
                                             });
                                         }
-                                }
+                                    }
+                                });
                             });
-                        });
+                        }
                     });
                 });
+        
                 res.json(Array.from(conditionsMap.values()));
-            }catch(err){
-                console.error('error getting conditions: ', err);
-                res.status(500).json({error: 'server error'});
+            } catch (error) {
+                console.error('Error getting conditions:', error);
+                res.status(500).json({ error: 'Server error' });
             }
-        })
+        });
 
         app.put('/admin/conditions', async (req,res) => {
             try {
@@ -297,27 +307,41 @@ MongoClient.connect(MongoURL)
                     return res.status(401).json({ error: 'Unauthorized' });
                 }
         
-                // Log what we're receiving
-                console.log('Verification request for:', {
-                    userId: req.params.userId,
-                    boardIndex: req.params.boardIndex
+                // Get the user first
+                const user = await db.collection('users').findOne({
+                    _id: new ObjectId(req.params.userId)
                 });
         
-                // Find and update the user's board
-                const result = await db.collection('users').updateOne(
+                if (!user || !user.boards) {
+                    return res.status(404).json({ error: 'User or boards not found' });
+                }
+        
+                // Convert boardIndex to number and verify it's valid
+                const boardIndex = parseInt(req.params.boardIndex);
+                if (boardIndex < 0 || boardIndex >= user.boards.length) {
+                    return res.status(400).json({ error: 'Invalid board index' });
+                }
+        
+                // Add isVerified property to the board array
+                const updatedBoard = user.boards[boardIndex];
+                if (Array.isArray(updatedBoard)) {
+                    // If the board is a direct array, wrap it in an object
+                    user.boards[boardIndex] = {
+                        grid: updatedBoard,
+                        isVerified: true
+                    };
+                } else {
+                    // If it's already an object, just add the isVerified property
+                    user.boards[boardIndex].isVerified = true;
+                }
+        
+                // Update the entire boards array
+                await db.collection('users').updateOne(
                     { _id: new ObjectId(req.params.userId) },
-                    { 
-                        $set: { 
-                            [`boards.${req.params.boardIndex}.isVerified`]: true 
-                        } 
-                    }
+                    { $set: { boards: user.boards } }
                 );
         
-                if (result.modifiedCount === 1) {
-                    res.json({ success: true });
-                } else {
-                    res.status(404).json({ error: 'Board not found' });
-                }
+                res.json({ success: true });
         
             } catch (error) {
                 console.error('Error verifying board:', error);

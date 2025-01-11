@@ -85,47 +85,31 @@ class AdminDashboard {
     }
 
     displayUnverifiedBoards(boards) {
-        console.log('details of boards:', boards.map(board => ({
-            userId: boards.userId,
-            boardIndex: board.boardIndex,
-            username: board.username
-        })))
-
-
-        console.log('Received boards:', boards); // Debug log
+        console.log('Detailed boards data:', boards);
         const boardList = document.querySelector('.board-list');
         boardList.innerHTML = boards.map(board => `
             <div class="board-item">
                 <span>User: ${board.username}</span>
-                <div class="board-actions">
-                    <button class="view-board-btn" 
-                            data-userid="${board.userId.toString()}" 
-                            data-boardindex="${board.boardIndex}">View</button>
-                    <button class="verify-board-btn" 
-                            data-userid="${board.userId.toString()}" 
-                            data-boardindex="${board.boardIndex}">Verify</button>
-                </div>
+                <button class="verify-board-btn" 
+                    onclick="event.stopPropagation(); return false;"
+                    data-userid="${board.userId}" 
+                    data-boardindex="${board.boardIndex}">Verify</button>
             </div>
         `).join('');
-
-        console.log('board items: ', document.querySelectorAll('.board-item'));
-
-
-        boardList.querySelectorAll('.verify-board-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const userId = e.target.dataset.userid;
-                const boardIndex = e.target.dataset.boardindex;
-                console.log('Verifying board:', { userId, boardIndex }); // Debug log
-                await this.verifyBoard(userId, boardIndex);
-            });
-        });
     
-        boardList.querySelectorAll('.view-board-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const userId = e.target.dataset.userid;
-                const boardIndex = e.target.dataset.boardindex;
-                console.log('Viewing board:', { userId, boardIndex }); // Debug log
-                this.viewBoard(userId, boardIndex);
+        // Add event listeners separately
+        document.querySelectorAll('.verify-board-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const userId = button.getAttribute('data-userid');
+                const boardIndex = button.getAttribute('data-boardindex');
+                console.log('Verify click - userId:', userId, 'boardIndex:', boardIndex);
+                if (userId && boardIndex) {
+                    await this.verifyBoard(userId, boardIndex);
+                } else {
+                    console.error('Missing data attributes:', { userId, boardIndex });
+                }
             });
         });
     }
@@ -217,24 +201,29 @@ class AdminDashboard {
     }
 
     async verifyBoard(userId, boardIndex) {
-        console.log('sending ver. req', {userId, boardIndex});
+        if (!userId || !boardIndex) {
+            console.error('Invalid parameters:', { userId, boardIndex });
+            return;
+        }
+    
         try {
+            console.log(`Attempting to verify board - userId: ${userId}, boardIndex: ${boardIndex}`);
             const response = await fetch(`/admin/boards/${userId}/${boardIndex}/verify`, {
                 method: 'PUT',
                 headers: {
+                    'Content-Type': 'application/json',
                     'sessionid': sessionStorage.getItem('sessionId')
                 }
             });
     
             if (response.ok) {
-                // Refresh board list after verification
                 await this.loadUnverifiedBoards();
             } else {
                 const error = await response.json();
-                alert(error.error || 'Error verifying board');
+                alert(`Error verifying board: ${error.error}`);
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Verification error:', error);
             alert('Error verifying board');
         }
     }
