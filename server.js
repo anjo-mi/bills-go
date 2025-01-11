@@ -1,4 +1,6 @@
-const MongoURL = 'mongodb+srv://nojaimk:N**buf52@cluster0.qbmen.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+require('dotenv').config();
+
+const MongoURL = process.env.MongoURL;
 
 const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb');
