@@ -156,7 +156,7 @@ class BoardsDisplay {
     }
 
     renderCurrentBoard() {
-        const board = this.boards[this.currentBoardIndex];
+        const currentBoard = this.boards[this.currentBoardIndex];
         const boardElement = document.getElementById('displayBoard');
         const currentNum = document.getElementById('currentBoardNum');
         const totalBoards = document.getElementById('totalBoards');
@@ -166,15 +166,30 @@ class BoardsDisplay {
     
         boardElement.innerHTML = '';
     
-        // board itself is the grid now, so iterate directly over it
+        // Handle both verified and unverified board formats
+        const board = currentBoard.grid || currentBoard; // If it's a verified board, use grid property, otherwise use board directly
+        const isVerified = currentBoard.hasOwnProperty('isVerified');
+    
         board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'board-cell';
+                
                 if (cell) {
                     cellDiv.textContent = cell.description;
-                    if (cell.status !== undefined) {
-                        cellDiv.classList.add(cell.status ? 'true' : 'false');
+                    
+                    // Add center class for middle cell
+                    if (rowIndex === 2 && colIndex === 2) {
+                        cellDiv.classList.add('center');
+                    }
+    
+                    // Handle verification status
+                    if (isVerified) {
+                        if (cell.status !== undefined) {
+                            cellDiv.classList.add(cell.status ? 'true' : 'false');
+                        } else {
+                            cellDiv.classList.add('undefined');
+                        }
                     } else {
                         cellDiv.classList.add('undefined');
                     }
@@ -186,6 +201,7 @@ class BoardsDisplay {
         currentNum.textContent = this.currentBoardIndex + 1;
         totalBoards.textContent = this.boards.length;
     
+        // Calculate stats using the correct board data
         const stats = BoardStatsCalculator.calculateStats(board);
         this.updateStats(stats);
     }

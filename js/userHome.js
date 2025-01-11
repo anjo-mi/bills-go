@@ -10,13 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 class BoardStatsCalculator {
-    static calculateStats(grid) {
+    static calculateStats(boardData) {
+        // Handle both formats - extract grid if it's a verified board object
+        const grid = Array.isArray(boardData) ? boardData : boardData.grid;
+        
         const results = {
             completedLines: 0,
             maxTrueConditions: 0,
             linesWithMaxTrue: 0,
             totalTrueConditions: this._countTotalTrueConditions(grid),
-            linesByTrueCount: new Map()
+            linesByTrueCount: new Map(),
+            isVerified: !Array.isArray(boardData) && boardData.isVerified
         };
 
         // Check rows
@@ -37,7 +41,7 @@ class BoardStatsCalculator {
             grid[2][2],
             grid[3][3],
             grid[4][4]
-        ];  // Main diagonal top-left to bottom-right
+        ];
         
         const diagonal2 = [
             grid[0][4],
@@ -45,7 +49,7 @@ class BoardStatsCalculator {
             grid[2][2],
             grid[3][1],
             grid[4][0]
-        ];  // Main diagonal top-right to bottom-left
+        ];
         
         this._evaluateLine(diagonal1, results);
         this._evaluateLine(diagonal2, results);
@@ -56,13 +60,11 @@ class BoardStatsCalculator {
     static _evaluateLine(line, results) {
         const trueCount = line.filter(cell => cell && cell.status === true).length;
         
-        // Update completed lines count
         if (trueCount === 5) {
             results.completedLines++;
         }
 
-        // Update max true conditions and lines with that count
-        if (trueCount > 1) {  // Only count lines with more than 1 true condition
+        if (trueCount > 1) {
             if (trueCount > results.maxTrueConditions) {
                 results.maxTrueConditions = trueCount;
                 results.linesWithMaxTrue = 1;
@@ -70,14 +72,12 @@ class BoardStatsCalculator {
                 results.linesWithMaxTrue++;
             }
 
-            // Update count of lines by number of true conditions
             const currentCount = results.linesByTrueCount.get(trueCount) || 0;
             results.linesByTrueCount.set(trueCount, currentCount + 1);
         }
     }
 
     static _countTotalTrueConditions(grid) {
-        // Count true conditions across the entire board (only once per cell)
         let total = 0;
         for (let i = 0; i < 5; i++) {
             for (let j = 0; j < 5; j++) {
@@ -116,7 +116,6 @@ class UserHomeManager {
             window.location.href = '/index.html';
         });
 
-    
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.getElementById('boardModal').style.display === 'block') {
                 this.closeModal();
@@ -125,7 +124,7 @@ class UserHomeManager {
     }
 
     async loadUserBoards() {
-        try{
+        try {
             const response = await fetch('/user-boards', {
                 method: 'GET',
                 headers: {
@@ -134,21 +133,18 @@ class UserHomeManager {
                 }
             });
 
-            if (response.ok){
+            if (response.ok) {
                 const data = await response.json();
                 this.boards = data.boards;
                 this.displayUserInfo();
                 this.displayBoards();
-            }else{
+            } else {
                 const errorData = await response.json();
                 console.error('Server error:', errorData);
-                // Instead of redirecting, alert the error
                 alert(`Error loading boards: ${errorData.error}`);
             }
-
-        }catch(err){
+        } catch(err) {
             console.error('Error in loadUserBoards:', err);
-            // Instead of redirecting, alert the error
             alert(`Error: ${err.message}`);
         }
     }
@@ -157,7 +153,6 @@ class UserHomeManager {
         document.getElementById('username').textContent = this.username;
         document.getElementById('boardCount').textContent = this.boards.length;
         
-        // Find best line across all boards
         const bestLine = Math.max(...this.boards.map(board => {
             const stats = BoardStatsCalculator.calculateStats(board);
             return stats.maxTrueConditions;
@@ -177,37 +172,36 @@ class UserHomeManager {
 
     sortBoards(boards) {
         return boards.sort((a, b) => {
-            // First check max number of true conditions in any line
-            if (a.stats.maxTrueConditions !== b.stats.maxTrueConditions) {
-                return b.stats.maxTrueConditions - a.stats.maxTrueConditions;
+            const statsA = BoardStatsCalculator.calculateStats(a);
+            const statsB = BoardStatsCalculator.calculateStats(b);
+
+            if (statsA.maxTrueConditions !== statsB.maxTrueConditions) {
+                return statsB.maxTrueConditions - statsA.maxTrueConditions;
             }
 
-            // If max true conditions are equal, check number of lines with that max
-            if (a.stats.linesWithMaxTrue !== b.stats.linesWithMaxTrue) {
-                return b.stats.linesWithMaxTrue - a.stats.linesWithMaxTrue;
+            if (statsA.linesWithMaxTrue !== statsB.linesWithMaxTrue) {
+                return statsB.linesWithMaxTrue - statsA.linesWithMaxTrue;
             }
 
-            // Check each lower number of true conditions (from max-1 down to 2)
-            for (let count = a.stats.maxTrueConditions - 1; count >= 2; count--) {
-                const aLines = a.stats.linesByTrueCount.get(count) || 0;
-                const bLines = b.stats.linesByTrueCount.get(count) || 0;
+            for (let count = statsA.maxTrueConditions - 1; count >= 2; count--) {
+                const aLines = statsA.linesByTrueCount.get(count) || 0;
+                const bLines = statsB.linesByTrueCount.get(count) || 0;
                 if (aLines !== bLines) {
                     return bLines - aLines;
                 }
             }
 
-            // If all else is equal, sort by total true conditions
-            return b.stats.totalTrueConditions - a.stats.totalTrueConditions;
+            return statsB.totalTrueConditions - statsA.totalTrueConditions;
         });
     }
 
-
     createBoardEntry(board, number, stats) {
         const entry = document.createElement('div');
-        entry.className = `board-entry ${stats.completedLines > 0 ? 'winning' : ''}`;
+        const isVerified = !Array.isArray(board) && board.isVerified;
+        entry.className = `board-entry ${stats.completedLines > 0 ? 'winning' : ''} ${isVerified ? 'verified' : ''}`;
         entry.innerHTML = `
             <div class="board-info">
-                <div class="username">Board ${number}</div>
+                <div class="username">Board ${number} ${isVerified ? '(Verified)' : ''}</div>
                 <div class="board-stats">
                     Closest Line: ${stats.maxTrueConditions}, 
                     Lines w/ Most: ${stats.linesWithMaxTrue}
@@ -226,16 +220,17 @@ class UserHomeManager {
     showBoardModal(board, number, stats) {
         const modal = document.getElementById('boardModal');
         const modalBoard = document.getElementById('modalBoard');
+        const grid = Array.isArray(board) ? board : board.grid;
 
-        document.getElementById('modalBoardNumber').textContent = number;
+        document.getElementById('modalBoardNumber').textContent = `${number}${!Array.isArray(board) && board.isVerified ? ' (Verified)' : ''}`;
         document.getElementById('modalCompletedLines').textContent = stats.completedLines;
         document.getElementById('modalMaxTrue').textContent = stats.maxTrueConditions;
         document.getElementById('modalLinesWithMax').textContent = stats.linesWithMaxTrue;
         document.getElementById('modalTotalTrue').textContent = stats.totalTrueConditions;
 
         modalBoard.innerHTML = '';
-        board.forEach((row, rowIndex) => {
-            row.forEach((cell, colIndex) => {
+        grid.forEach((row) => {
+            row.forEach((cell) => {
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'board-cell';
                 if (cell) {
@@ -266,8 +261,6 @@ class UserHomeManager {
             newBoardContainer.classList.add('hidden');
         }
     }
-
-    // You can use the same generateTestBoards method from before
 }
 
 document.addEventListener('DOMContentLoaded', () => {
