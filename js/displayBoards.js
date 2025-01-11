@@ -187,8 +187,8 @@ class BoardsDisplay {
         currentNum.textContent = this.currentBoardIndex + 1;
         totalBoards.textContent = this.boards.length;
     
-        // Calculate stats using the correct board data
-        const stats = BoardStatsCalculator.calculateStats(currentBoard); // Use currentBoard instead of board
+        // Calculate stats using the same processed board data we used for display
+        const stats = BoardStatsCalculator.calculateStats(board);
         this.updateStats(stats);
     }
 
