@@ -36,8 +36,11 @@ MongoClient.connect(MongoURL)
                     username: req.body.username
                 });
 
-        
+                
+                
                 if (existingUser) {
+                    
+                    alert(existingUser)
                     return res.status(409).json({ error: 'Username already exists' });
                 }
 
