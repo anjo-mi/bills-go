@@ -463,7 +463,7 @@ h2 {
 
     .conditions-pool {
         width: 90%;
-        max-height: 30vh;
+        max-height: 50vh;
         float: left;
         margin-right: 2rem;
     }
@@ -510,8 +510,8 @@ h2 {
     }
 
     .conditions-pool {
-        width: 90%;
-        max-height: 30vh;
+        width: 95%;
+        max-height: 60vh;
         float: none;
         margin-right: 0;
     }
