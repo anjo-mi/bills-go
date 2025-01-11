@@ -278,6 +278,7 @@ MongoClient.connect(MongoURL)
                                 userId: user._id.toString(), // Convert ObjectId to string
                                 username: user.username,
                                 boardIndex: index,
+                                boardNumber: index + 1,
                                 board: board
                             });
                         }

@@ -89,7 +89,7 @@ class AdminDashboard {
         const boardList = document.querySelector('.board-list');
         boardList.innerHTML = boards.map(board => `
             <div class="board-item">
-                <span>User: ${board.username}</span>
+                <span>User: ${board.username} - Board #${board.boardNumber}</span>
                 <button class="verify-board-btn" 
                     onclick="event.stopPropagation(); return false;"
                     data-userid="${board.userId}" 
