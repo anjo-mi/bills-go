@@ -585,11 +585,12 @@ h2 {
 
     .bingo-board .board-cell{
         font-size: 1.1rem;
+        min-width: 15%;
     }
 
-    .bingo-modal-content .bingo-board{
+    .board-modal .bingo-modal-content .bingo-board{
         margin: 0 auto;
-        max-width: 95vw;
+        max-width: 95%;
     }
 }
 
@@ -638,11 +639,12 @@ h2 {
 
     .bingo-board .board-cell{
         font-size: .8rem;
+        min-width: 15%;
     }
 
-    .bingo-modal-content .bingo-board{
+    .board-modal .bingo-modal-content .bingo-board{
         margin: 0 auto;
-        max-width: 95vw;
+        max-width: 95%;
     }
 }
 
