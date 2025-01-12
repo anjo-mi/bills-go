@@ -6,6 +6,7 @@ class AdminDashboard {
         }
 
         this.unverifiedBoards = [];
+        this.allBoards = [];
 
         this.loadAllData();
         this.setupEventListeners();
@@ -16,6 +17,7 @@ class AdminDashboard {
         await Promise.all([
             this.loadUsers(),
             this.loadUnverifiedBoards(),
+            this.loadAllBoards(),
             this.loadConditions()
         ]);
     }
@@ -118,6 +120,52 @@ class AdminDashboard {
         });
     }
 
+    async loadAllBoards() {
+        try {
+            const response = await fetch('/all-boards', {
+                headers: {
+                    'sessionid': sessionStorage.getItem('sessionId')
+                }
+            });
+            
+            if (response.ok) {
+                this.allBoards = await response.json();
+                this.displayAllBoards(this.allBoards);
+            }else{
+            }
+        } catch (error) {
+            console.error('Error loading all boards:', error);
+        }
+    }
+
+    displayAllBoards(boards) {
+        const boardList = document.querySelector('.all-boards');
+        boardList.innerHTML = boards.map(board => `
+            <div class="board-item">
+                <span>User: ${board.username} - Board #${board.boardNumber}</span>
+                <button class="delete-board-btn" 
+                    onclick="event.stopPropagation(); return false;"
+                    data-userid="${board.userId}" 
+                    data-boardindex="${board.boardNumber - 1}">Delete</button>
+            </div>
+        `).join('');
+    
+        // Add event listeners separately
+        document.querySelectorAll('.delete-board-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const userId = button.getAttribute('data-userid');
+                const boardIndex = parseInt(button.getAttribute('data-boardindex')); // Add parseInt here
+                if (userId && boardIndex !== undefined) {
+                    await this.deleteBoard(userId, boardIndex);
+                } else {
+                    console.error('Missing data attributes:', { userId, boardIndex });
+                }
+            });
+        });
+    }
+
     async loadConditions() {
         try {
             const response = await fetch('/admin/conditions', {
@@ -203,6 +251,36 @@ class AdminDashboard {
         } catch (error) {
             console.error('Error deleting user:', error);
             alert('Error deleting user');
+        }
+    }
+
+    async deleteBoard(userId, boardIndex) {
+        if (!userId || boardIndex === undefined) {
+            console.error('Invalid parameters:', { userId, boardIndex });
+            return;
+        }
+    
+        try {
+            const response = await fetch('/delete-board', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'sessionid': sessionStorage.getItem('sessionId')
+                },
+                body: JSON.stringify({ 
+                    userId, 
+                    boardIndex: boardIndex // It's already a number from parseInt above
+                })
+            });
+    
+            if (response.ok) {
+                await this.loadAllBoards(); // Reload the list after successful deletion
+            } else {
+                const error = await response.json();
+                console.error('Error deleting board:', error);
+            }
+        } catch (error) {
+            console.error('Error deleting board:', error);
         }
     }
 

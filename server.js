@@ -117,15 +117,17 @@ MongoClient.connect(MongoURL)
             }
         })
 
-        app.get('/all-boards', async (req,res) => {
+        app.get('/all-boards', async (req, res) => {
             try {
                 const allBoards = [];
                 const users = await db.collection('users').find().toArray();
                 users.forEach(user => {
                     user.boards.forEach((board, index) => {
                         allBoards.push({
+                            userId: user._id,  // Include the MongoDB _id
                             username: user.username,
                             boardNumber: index + 1,
+                            boardId: board._id || index,  // Use board ID if exists, fallback to index
                             grid: Array.isArray(board) ? board : board.grid,
                             isVerified: board.isVerified || false
                         });
@@ -442,6 +444,41 @@ MongoClient.connect(MongoURL)
             } catch(err) {
                 console.error('error deleting user: ', err);
                 res.status(500).json({error: 'server error'});
+            }
+        });
+
+        app.delete('/delete-board', async (req, res) => {
+            console.log('Delete board request received:', req.body);  // Debug log
+            
+            try {
+                const { userId, boardIndex } = req.body;
+                
+                if (!userId || boardIndex === undefined) {
+                    return res.status(400).json({ error: 'Missing userId or boardIndex' });
+                }
+        
+                console.log('Attempting to delete board:', { userId, boardIndex }); // Debug log
+        
+                const result = await db.collection('users').updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $unset: { [`boards.${boardIndex}`]: 1 } }
+                );
+                
+                await db.collection('users').updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $pull: { boards: null } }
+                );
+        
+                console.log('Delete operation result:', result); // Debug log
+        
+                if (result.modifiedCount > 0) {
+                    res.json({ success: true });
+                } else {
+                    res.status(404).json({ error: 'Board not found' });
+                }
+            } catch (err) {
+                console.error('Error deleting board:', err);
+                res.status(500).json({ error: 'Server error' });
             }
         });
 
