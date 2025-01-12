@@ -175,7 +175,7 @@ h2 {
 .bingo-board {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 0.8rem;
+    gap: 2rem;
     width: min(60rem, 90vw);
     margin: 0 auto;
 }
@@ -575,7 +575,7 @@ h2 {
 
     .board-modal .bingo-modal-content{
         max-width: 95vw;
-        margin: 0 auto;
+        margin: 0 5%;
     }
 
     .directions{
@@ -601,7 +601,7 @@ h2 {
     }
     
     .conditions-list {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .condition-item {
@@ -623,7 +623,7 @@ h2 {
     }
     .board-modal .bingo-modal-content{
         max-width: 95vw;
-        margin: 0 auto;
+        margin: 0 5%;
     }
 
     .directions{
