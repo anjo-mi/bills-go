@@ -153,12 +153,15 @@ class AdminDashboard {
         // Add event listeners separately
         document.querySelectorAll('.delete-board-btn').forEach(button => {
             button.addEventListener('click', async (e) => {
+                
                 e.preventDefault();
                 e.stopPropagation();
                 const userId = button.getAttribute('data-userid');
                 const boardIndex = parseInt(button.getAttribute('data-boardindex')); // Add parseInt here
                 if (userId && boardIndex !== undefined) {
-                    await this.deleteBoard(userId, boardIndex);
+                    if (confirm('Are you sure you want to delete this board?')) {
+                        await this.deleteBoard(userId, boardIndex);
+                    }
                 } else {
                     console.error('Missing data attributes:', { userId, boardIndex });
                 }
