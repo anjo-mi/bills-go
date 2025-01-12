@@ -574,8 +574,9 @@ h2 {
     }
 
     .board-modal .bingo-modal-content{
-        max-width: 95vw;
+        max-width: 98vw;
         margin: 0 5%;
+        min-height: 80vh;
     }
 
     .directions{
@@ -584,6 +585,11 @@ h2 {
 
     .bingo-board .board-cell{
         font-size: 1.1rem;
+    }
+
+    .bingo-modal-content .bingo-board{
+        margin: 0 auto;
+        max-width: 95vw;
     }
 }
 
@@ -632,6 +638,11 @@ h2 {
 
     .bingo-board .board-cell{
         font-size: .8rem;
+    }
+
+    .bingo-modal-content .bingo-board{
+        margin: 0 auto;
+        max-width: 95vw;
     }
 }
 
