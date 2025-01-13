@@ -646,6 +646,17 @@ h2 {
         margin: 0 auto;
         max-width: 95%;
     }
+
+    .boards-carousel .board-display .bingo-board{
+        margin: 0 auto;
+        max-width: 95%;
+    }
+
+    .board-display .bingo-board .board-cell{
+        min-width: 15%;
+        max-width: 18vw;
+    }
+    
 }
 
 /* Rules and Login Jingle */
