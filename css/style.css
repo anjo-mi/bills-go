@@ -352,11 +352,31 @@ h2 {
     flex-direction: column;
 }
 
+.boards-carousel {
+    background-color: white;
+    width: 90%;
+    height: 80vh;
+    max-height: 90vw;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
 .bingo-modal-content .bingo-board {
     flex-grow: 1;
     margin: 0 auto;  /* Override existing margin */
     width: 100%;
     max-width: 95vh;  /* Take full width of modal */
+}
+
+.boards-carousel .board-display .bingo-board{
+    flex-grow: 1;
+    margin: 0 auto;  /* Override existing margin */
+    width: 100%;
+    max-width: 95vw;  /* Take full width of modal */
 }
 
 .bingo-modal-content .modal-header {

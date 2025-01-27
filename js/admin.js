@@ -201,6 +201,23 @@ class AdminDashboard {
     }
 
     setupEventListeners() {
+        // End Game
+        document.getElementById('end').addEventListener('click', async () => {
+            const response = await fetch('/end', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'sessionid': sessionStorage.getItem('sessionId')
+                }
+            });
+            if (response.ok){
+                alert('winner updated');
+            }else{
+                console.error(await response.json());
+                alert('error ending game')
+            }
+        });
+
         // Delete user
         document.querySelector('.user-list').addEventListener('click', async (e) => {
             if (e.target.classList.contains('delete-user-btn')) {

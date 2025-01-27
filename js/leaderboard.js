@@ -93,11 +93,7 @@ class LeaderboardManager {
         winnersContainer.innerHTML = '';
 
         if (winners.length === 0) {
-            winnersContainer.innerHTML = `
-                <div class="no-winners">
-                    No Winners as of yet
-                </div>
-            `;
+            winnersContainer.appendChild(this.createBoardEntry(this.boards[0], true))
         } else {
             winners.forEach(board => {
                 winnersContainer.appendChild(this.createBoardEntry(board, true));
